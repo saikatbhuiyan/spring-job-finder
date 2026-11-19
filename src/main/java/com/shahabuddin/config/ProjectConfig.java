@@ -2,6 +2,7 @@ package com.shahabuddin.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Description;
 
 import com.shahabuddin.beans.Vehicle;
 
@@ -15,9 +16,24 @@ to be used in the application.
 public class ProjectConfig {
 
     @Bean
-    Vehicle vehicle() {
+    Vehicle vehicle1() {
         var veh = new Vehicle();
         veh.setName("Tesla");
+        return veh;
+    }
+
+    @Bean
+    Vehicle vehicle2() {
+        var veh = new Vehicle();
+        veh.setName("BYD");
+        return veh;
+    }
+
+    @Bean({"ferrari", "myFavoriteVehicle"})
+    @Description("This is a Vehicle class Bean")
+    Vehicle vehicle3() {
+        var veh = new Vehicle();
+        veh.setName("Toyota");
         return veh;
     }
 

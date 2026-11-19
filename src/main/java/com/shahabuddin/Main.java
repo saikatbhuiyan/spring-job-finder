@@ -23,8 +23,11 @@ public class Main {
          * Closing lets Spring run bean destroy callbacks and release resources.
          */
         try (var context = new AnnotationConfigApplicationContext(ProjectConfig.class)) {
-            var veh = context.getBean(Vehicle.class);
+            var veh = context.getBean("vehicle1", Vehicle.class);
             IO.println("Vehicle name from Spring Context is: " + veh.getName());
+
+            var veh2 = context.getBean("vehicle2", Vehicle.class);
+            IO.println("Vehicle name from Spring Context is: " + veh2.getName());
 
             /*
              * We don’t need to do any explicit casting while fetching a bean from context.
