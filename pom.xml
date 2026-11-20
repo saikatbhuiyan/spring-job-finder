@@ -20,7 +20,22 @@
 
     <properties>
         <java.version>25</java.version>
+        <spring-modulith.version>2.2.0</spring-modulith.version>
+        <archunit.version>1.5.1</archunit.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Aligned versions for all Spring Modulith artifacts -->
+            <dependency>
+                <groupId>org.springframework.modulith</groupId>
+                <artifactId>spring-modulith-bom</artifactId>
+                <version>${spring-modulith.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- Spring MVC + embedded Tomcat + Jackson (JSON) -->
@@ -46,6 +61,20 @@
             <artifactId>spring-boot-starter-actuator-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Architecture enforcement: module boundaries (Spring Modulith) and
+             layer rules inside modules (ArchUnit). See docs/adr/0001. -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -54,6 +83,13 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!-- `mvn spring-boot:run` uses the dev profile; the packaged jar does not
+                         (production must opt in explicitly with SPRING_PROFILES_ACTIVE=prod). -->
+                    <profiles>
+                        <profile>dev</profile>
+                    </profiles>
+                </configuration>
             </plugin>
         </plugins>
     </build>
