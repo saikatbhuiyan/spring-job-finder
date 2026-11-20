@@ -21,11 +21,52 @@ Builds on [note 02](02-spring-ioc-and-beans.md) and [note 03](03-multiple-beans-
 |-|------------------------------|---------------------------------|
 | Where | A method in a `@Configuration` class | On the class itself |
 | Who calls `new` | You, inside the method | Spring |
-| Bean name | Method name | Class name with a lowercase first letter (`Vehicle` → `vehicle`) |
+| Bean name | Method name | Class name with a lowercase first letter (`Vehicle` → `vehicle`; but `URLParser` stays `URLParser`, see note 03 §9) |
 | Best for | Classes you **can't** annotate: library classes, or ones that need custom setup | **Your own** classes |
 
 In real Spring/Spring Boot apps, most beans are your own classes, so `@Component` (and
 its specialised forms) is the most common way.
+
+#### `@Component` vs `@Bean` in depth
+
+| Question | `@Component` | `@Bean` |
+|----------|--------------|---------|
+| What is annotated? | A **class** | A **method** (inside a `@Configuration` class) |
+| How does Spring find it? | `@ComponentScan` must cover the class's package | Spring reads the `@Configuration` class you register |
+| Who creates the object? | Spring calls the constructor | **Your code** inside the method (`new …`, a builder, a factory) |
+| Can it be used on library classes? | ❌ You can't add annotations to code you don't own | ✅ Any class at all (verified with `StringBuilder`) |
+| How many beans per class? | **One** per class | As many as you write methods (note 03 had three `Vehicle`s) |
+| Default name | `vehicle` (class name, lowercase first letter) | Method name |
+| Custom name | `@Component("v8")` (verified) | `@Bean("ferrari")` |
+| Setup logic | Constructor + lifecycle hooks | Any Java code in the method body: if/else, reading config, calling setters |
+| Couples the class to Spring? | Yes, the class carries a Spring annotation | No, the class stays plain Java and the config class knows about Spring |
+
+**Decision rule:**
+
+1. **It's your own class** (`JobService`, `JobRepository`, `JobController`) → `@Component`
+   or a stereotype (`@Service`, `@Repository`, `@RestController`).
+2. **It comes from a library**, or needs **custom construction** (a builder, settings,
+   several differently configured instances) → a `@Bean` method.
+
+Typical `@Bean` examples you'll write later in Job Finder (not in the code yet 🔜):
+
+```java
+@Configuration
+class AppConfig {
+    @Bean
+    PasswordEncoder passwordEncoder() {          // Spring Security class: can't annotate it
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    RestClient jobBoardClient() {                // library class, built with custom settings
+        return RestClient.builder().baseUrl("https://api.example.com").build();
+    }
+}
+```
+
+⚠️ **Don't use both for the same class.** A `@Component` class that *also* has `@Bean`
+methods returning it gives you several beans (this project briefly had 4 `Vehicle`s; §4).
 
 ### 2. In this project
 
@@ -66,6 +107,9 @@ All of them are picked up by the scan:
 
 In Job Finder we'll use `JobService` (`@Service`), `JobRepository` (`@Repository`) and
 `JobController` (`@RestController`).
+
+**In depth** (meta-annotations, `@Controller` vs `@RestController`, custom stereotypes),
+all verified: [note 07](07-stereotype-annotations.md).
 
 ### 4. ✅ Two bugs found and fixed (2026-11-20)
 

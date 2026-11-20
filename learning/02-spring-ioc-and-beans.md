@@ -39,7 +39,7 @@ public class JobService {
 }
 ```
 
-(We'll use injection in an upcoming step; see the [roadmap](05-roadmap.md).)
+(We'll use injection in an upcoming step; see the [roadmap](roadmap.md).)
 
 ## 3. Key vocabulary
 
@@ -53,7 +53,7 @@ public class JobService {
 
 > `BeanFactory` is the minimal container interface. `ApplicationContext` extends it and adds
 > events, internationalisation, resource loading, and more. In practice you always use
-> `ApplicationContext`.
+> `ApplicationContext`. Full comparison, with verified output, in §11.
 
 ---
 
@@ -320,6 +320,110 @@ an `ApplicationContext` and registers a lot of `@Bean`s for you.
 
 ---
 
+## 11. 🧪 `BeanFactory` vs `ApplicationContext` in depth
+
+Spring has **two levels** of IoC container:
+
+| | `BeanFactory` | `ApplicationContext` |
+|-|---------------|----------------------|
+| What it is | The **basic** container: creates, wires and stores beans | The **full** container: everything `BeanFactory` does, plus enterprise features |
+| Package | `org.springframework.beans.factory` (jar `spring-beans`) | `org.springframework.context` (jar `spring-context`) |
+| Main implementation | `DefaultListableBeanFactory` | `AnnotationConfigApplicationContext` (ours); Spring Boot creates one for you |
+| Singleton creation | **Lazy**: created on the first `getBean` | **Eager**: all created at startup |
+| `@PostConstruct`, `@Autowired`, `@Configuration` processing | ❌ Not automatically; you must register post-processors yourself | ✅ Built in |
+| Events (`ContextRefreshedEvent`, `@EventListener`) | ❌ | ✅ |
+| Messages / i18n (`MessageSource`) | ❌ | ✅ |
+| Environment, properties, profiles | ❌ | ✅ `getEnvironment()` |
+| Loading files (`classpath:…`) | ❌ | ✅ `ResourcePatternResolver` |
+| When to use | Almost never directly (very memory-constrained cases, framework internals) | ✅ **Always** in applications |
+
+### How they relate
+
+`ApplicationContext` **is a** `BeanFactory` (it extends the interface), and internally it
+**has a** `DefaultListableBeanFactory` that does the actual bean work. It wraps the basic
+factory and adds the extra features on top.
+
+```text
+                  BeanFactory
+                       ▲
+          ┌────────────┴────────────┐
+ ListableBeanFactory      HierarchicalBeanFactory
+          ▲                         ▲
+          └────────────┬────────────┘
+                ApplicationContext ──also extends──▶ EnvironmentCapable, MessageSource,
+                       ▲                             ApplicationEventPublisher,
+                       │                             ResourcePatternResolver
+     AnnotationConfigApplicationContext
+         └── holds internally → DefaultListableBeanFactory
+```
+
+Verified with reflection:
+
+```text
+ctx instanceof BeanFactory? true
+ctx.getBeanFactory() class: DefaultListableBeanFactory
+ApplicationContext extends: [EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,
+                             MessageSource, ApplicationEventPublisher, ResourcePatternResolver]
+```
+
+### The same bean in both containers (verified)
+
+A test class `Car` with a printing constructor, `@PostConstruct` and `afterPropertiesSet()`:
+
+**1. Plain `BeanFactory`:**
+
+```java
+var bf = new DefaultListableBeanFactory();
+bf.registerBeanDefinition("car", new RootBeanDefinition(Car.class));
+bf.getBean("car");
+```
+
+```text
+   registered; nothing created yet
+   calling getBean...
+   Car constructor           ← created only now (LAZY)
+   afterPropertiesSet        ← InitializingBean works (it's part of spring-beans)
+                             ← @PostConstruct did NOT run
+```
+
+**2. `ApplicationContext`:**
+
+```java
+try (var ctx = new AnnotationConfigApplicationContext(Cfg.class)) {
+    ctx.getBean(Car.class);
+}
+```
+
+```text
+   creating context...
+   Car constructor           ← created during startup (EAGER)
+   @PostConstruct            ← annotation processing is built in
+   afterPropertiesSet
+   event: ContextRefreshedEvent   ← events: "the context is ready"
+   context created; calling getBean...
+   closing...
+   event: ContextClosedEvent
+```
+
+What this shows:
+
+1. **Lazy vs eager.** The `BeanFactory` waited for `getBean`. The context built everything
+   up front.
+2. **No annotation magic in a plain `BeanFactory`.** `@PostConstruct` was silently
+   ignored. That's also why our `@Configuration` + `@Bean` setup needs an
+   `ApplicationContext`: the code that reads those annotations is registered by the
+   context (they are the `internal…Processor` beans listed in §6).
+3. **Events.** Only the context published `ContextRefreshedEvent` / `ContextClosedEvent`.
+
+### Why eager creation is better (for applications)
+
+If a bean is misconfigured, an `ApplicationContext` fails **at startup**, when you're
+watching. A lazy `BeanFactory` would fail later, maybe hours afterwards, on the first request
+that needs that bean. Eager startup = **fail fast**. You can still make individual beans
+lazy with `@Lazy` (🔜 roadmap).
+
+---
+
 ## Common mistakes
 
 | Mistake | What happens |
@@ -348,6 +452,19 @@ An object that is instantiated, assembled and managed by the Spring IoC containe
 **Q: `BeanFactory` vs `ApplicationContext`?**
 `ApplicationContext` is a superset of `BeanFactory`. It adds eager singleton creation, events,
 i18n and resource loading. Use `ApplicationContext`.
+
+**Q: Is `ApplicationContext` a `BeanFactory`?**
+Yes, in two ways. It *extends* the `BeanFactory` interface, and internally it *holds* a
+`DefaultListableBeanFactory` that does the actual bean work (§11).
+
+**Q: Does a plain `BeanFactory` process `@PostConstruct` or `@Autowired`?**
+No. Those annotations are handled by bean post-processors, which an `ApplicationContext`
+registers automatically and a plain `BeanFactory` doesn't. Verified: `@PostConstruct` was
+silently skipped.
+
+**Q: Why are singletons created eagerly in an `ApplicationContext`?**
+To fail fast. Configuration errors show up at startup, not on the first request that
+needs the bean.
 
 **Q: What is the default bean scope?**
 Singleton: one shared instance per container.

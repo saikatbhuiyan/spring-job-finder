@@ -15,7 +15,12 @@ Read the notes in order. Each note builds on the previous one.
 | 02 | [Spring IoC container and beans](02-spring-ioc-and-beans.md) | IoC, DI, `ApplicationContext`, `@Configuration`, `@Bean`, `getBean`, bean names, singletons, errors | ✅ Applied |
 | 03 | [Multiple beans, bean names and aliases](03-multiple-beans-and-naming.md) | Several beans of one type, `NoUniqueBeanDefinitionException`, `@Bean("name")`, aliases, `@Description` | ✅ Applied |
 | 04 | [`@Component`, `@ComponentScan` and the bean lifecycle](04-component-scan-and-bean-lifecycle.md) | Stereotype annotations, scanning, init/destroy hooks and their order, `InitializingBean`/`DisposableBean`, `@PostConstruct`/`@PreDestroy` | ✅ Applied (annotations 🧪) |
-| 05 | [Roadmap: what comes next](05-roadmap.md) | Planned topics from Spring Core to the full Job Finder app | 🔜 Planned |
+| 05 | [Layers in a backend application](05-backend-layers.md) | Controller → Service → Repository, DTOs vs entities, layering rules, package-by-feature, Job Finder plan | 🧪 Verified in a demo |
+| 06 | [The `@Import` annotation](06-import-annotation.md) | Modular configuration, importing configs and plain classes, `ImportSelector`, how `@Enable…` works, `@Import` vs `@ComponentScan` | 🧪 Verified in a demo |
+| 07 | [Stereotype annotations](07-stereotype-annotations.md) | `@Component` family tree, `@Service`/`@Repository`/`@Controller`/`@RestController`/`@Configuration`, what each adds, custom stereotypes | ✅ `@Component`/`@Configuration`; others 🧪 |
+
+**What's next:** see the [roadmap](roadmap.md) for planned topics, from Spring Core to the
+full Job Finder app.
 
 ## Status legend
 
@@ -43,3 +48,10 @@ Each note follows the same structure, so it's easy to come back and revise:
 | 2026-11-19 | Three `Vehicle` beans, explicit names, aliases, `@Description`; fixed a `veh`/`veh2` print bug | 03 |
 | 2026-11-19 | Notes committed to Git (removed `learning/` from `.gitignore`) | all |
 | 2026-11-20 | `Vehicle` becomes a scanned `@Component` with `InitializingBean`/`DisposableBean`; added `jakarta.annotation-api`. Fixed: malformed `pom.xml`, wrong scan package, duplicate `Vehicle` beans, restored try-with-resources | 00 §3 · 04 |
+| 2026-11-20 | Studied `@Component` vs `@Bean` in depth (when to use which) | 04 §1 |
+| 2026-11-20 | Studied `BeanFactory` vs `ApplicationContext` (lazy vs eager, annotation processing, events) | 02 §11 |
+| 2026-11-20 | Studied every fix for `NoUniqueBeanDefinitionException`: `@Primary`, `@Qualifier`, `@Fallback`, parameter names, `List`/`Map` | 03 §8 |
+| 2026-11-20 | Studied every way to name a bean (incl. `URLParser` rule, name clashes, name generators) and `@Primary` in depth | 03 §9, §10 |
+| 2026-11-20 | Studied backend layers (controller/service/repository, DTOs, package-by-feature) with a verified demo. Roadmap renamed to `roadmap.md` | 05 |
+| 2026-11-20 | Studied `@Import` (configs, plain classes, `ImportSelector`, `@Enable…` internals, circular imports) | 06 |
+| 2026-11-20 | Studied stereotype annotations (meta-annotations, runtime classes, custom `@UseCase`) | 07 |
