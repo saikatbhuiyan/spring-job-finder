@@ -40,6 +40,10 @@ curl localhost:8080/actuator/health
 | `GET /actuator/health/liveness` | Is the app alive? (restart if not) |
 | `GET /actuator/health/readiness` | Can it take traffic? |
 
+API conventions:
+- **Versioning:** URI path (`/api/v1/...`) using Spring Framework 7's built-in API versioning.
+- **Errors:** RFC 9457 Problem Details (`application/problem+json`).
+
 Build and run the executable jar:
 
 ```bash
@@ -55,15 +59,17 @@ Run the tests: `mvn test`
 src/main/java/com/shahabuddin/jobfinder/
 └── JobFinderApplication.java      # @SpringBootApplication entry point
 src/main/resources/
-└── application.properties         # Actuator health configuration
+└── application.properties         # Actuator, Problem Details, API versioning
 src/test/java/com/shahabuddin/jobfinder/
-└── HealthEndpointTests.java       # starts the app, calls the endpoints over HTTP
+├── HealthEndpointTests.java       # starts the app, calls the endpoints over HTTP
+├── ErrorResponseTests.java        # locks in the Problem Details error format
+└── ApiVersioningTests.java        # locks in /api/v1 versioning (Actuator unaffected)
 learning/                          # step-by-step notes (see below)
 ```
 
 ## Learning notes
 
-The [`learning/`](learning/README.md) folder is a step-by-step journal (16 notes so far). Each
+The [`learning/`](learning/README.md) folder is a step-by-step journal (19 notes so far). Each
 note explains a concept from scratch, shows the code, includes **real output from running
 experiments**, and ends with common mistakes and interview questions.
 
@@ -71,8 +77,8 @@ Topics so far: project setup, Java essentials, the IoC container (`BeanFactory` 
 `ApplicationContext`), bean naming, `@Primary` / `@Qualifier`, component scanning and
 stereotypes, the bean lifecycle, `@Import`, backend layering, dependency injection and
 autowiring, circular dependencies, programmatic bean registration (Spring 7
-`BeanRegistrar`), all six bean scopes, eager vs lazy initialization, and
-`@SpringBootApplication` with Actuator health checks.
+`BeanRegistrar`), all six bean scopes, eager vs lazy initialization,
+`@SpringBootApplication` with Actuator health checks, `@RestController` / REST API design, request mapping and binding, and API versioning.
 
 The original plain-Spring demo code from the early notes is preserved at the git tag
 [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).
