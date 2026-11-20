@@ -34,6 +34,7 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | ✅ | Health endpoint with Actuator (liveness/readiness probes): [note 15 §5](15-spring-boot-application-and-health.md) |
 | ✅ | Profiles `dev` / `prod` (`application-{profile}.properties`): [note 20 §6](20-spring-boot-logging.md) |
 | ✅ | Logging: console patterns, structured ECS JSON in prod: [note 20](20-spring-boot-logging.md) |
+| ✅ | DevTools: fast restart in dev, proven absent from the jar: [note 21](21-spring-boot-devtools.md) |
 | 🔜 | Request/correlation ID filter (MDC) |
 
 ## Phase 3: Building Job Finder

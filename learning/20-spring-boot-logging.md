@@ -309,6 +309,9 @@ until `Started JobFinderApplication`, reads the port from `Tomcat started on por
 **Mutation check:** I commented out `logging.structured.format.console=ecs` and the prod test
 **failed**, then I restored it. The test really guards the behavior.
 
+> Later (note 21 §6): after DevTools was added, the child JVM's classpath has DevTools filtered
+> out, and the test asserts DevTools is **not** active, so the "prod" launch matches the real jar.
+
 > One manual check was misleading along the way: a helper script reused an old log file that
 > already contained "Started JobFinderApplication", so it called the app before it was ready. A
 > clean re-run with the same command was correct. Lesson: start every verification with fresh
