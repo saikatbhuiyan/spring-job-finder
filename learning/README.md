@@ -29,6 +29,8 @@ Read the notes in order. Each note builds on the previous one.
 | 16 | [`@RestController` (= `@Controller` + `@ResponseBody`)](16-rest-controller.md) | View names vs response body, message converters + Jackson 3, `ResponseEntity`, status codes, RFC 9457 Problem Details | 🧪 demo; Problem Details ✅ |
 | 17 | [`@RequestMapping`, `@PathVariable`, `@RequestParam`, `@RequestHeader`, `@RequestBody`](17-request-mapping-and-binding.md) | Routing conditions (405/406/415), overlapping-route trap, type conversion, required/optional, lists/enums/dates, headers, JSON binding and Jackson 3 defaults | 🧪 Verified in a demo |
 | 18 | [API versioning](18-api-versioning.md) | FoodRush scenario, breaking vs non-breaking changes, 4 strategies with Spring 7 built-in versioning, deprecation/sunset headers, Job Finder decision | ✅ Path versioning applied + tested |
+| 19 | [Clean architecture: structure, rules, enforcement](19-clean-architecture.md) | Dependency rule, layered vs hexagonal vs modular, Job Finder structure, Spring Modulith + ArchUnit rules, testing the rules, ADRs | ✅ Applied + enforced |
+| 20 | [Spring Boot logging: console patterns, profiles, structured JSON](20-spring-boot-logging.md) | SLF4J/Logback, levels, pattern conversion words, ECS/Logstash/GELF, MDC, dev/prod profiles, testing logging in a separate JVM | ✅ Applied + tested |
 
 **What's next:** see the [roadmap](roadmap.md) for planned topics, from Spring Core to the
 full Job Finder app.
@@ -78,3 +80,5 @@ Each note follows the same structure, so it's easy to come back and revise:
 | 2026-11-20 | Studied `@RestController` with a verified scratch API. **Enabled RFC 9457 Problem Details** for all errors + test | 16 |
 | 2026-11-20 | Studied request mapping and binding annotations in depth (40+ verified requests, 3 traps root-caused) | 17 |
 | 2026-11-20 | Studied API versioning (all 4 strategies verified with Spring 7). **Applied path versioning `/api/v1`** + `ApiVersioningTests` (incl. Actuator not affected) | 18 |
+| 2026-11-20 | **Adopted modular monolith + clean layers** (ADR 0001), enforced by Spring Modulith 2.2 + ArchUnit 1.5.1 with fixture-tested rules (28 tests). Added ADRs 0001–0003 | 19 |
+| 2026-11-20 | **Logging per environment:** `dev` profile (compact pattern, DEBUG, health details) via `spring-boot:run`, `prod` profile (ECS JSON). ADR 0004, `ProfileConfigurationTests` in a child JVM (30 tests) | 20 |

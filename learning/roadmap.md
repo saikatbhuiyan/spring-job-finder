@@ -32,15 +32,15 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 |--------|-------|
 | ✅ | Migrated to Spring Boot 4.2 (starters, `@SpringBootApplication`, auto-configuration): [note 15](15-spring-boot-application-and-health.md) |
 | ✅ | Health endpoint with Actuator (liveness/readiness probes): [note 15 §5](15-spring-boot-application-and-health.md) |
-| 🔜 | `application.yml`, profiles (`dev`, `prod`) |
-| 🔜 | Logging (SLF4J + Logback) |
+| ✅ | Profiles `dev` / `prod` (`application-{profile}.properties`): [note 20 §6](20-spring-boot-logging.md) |
+| ✅ | Logging: console patterns, structured ECS JSON in prod: [note 20](20-spring-boot-logging.md) |
+| 🔜 | Request/correlation ID filter (MDC) |
 
 ## Phase 3: Building Job Finder
 
-The app follows the layered structure from [note 05](05-backend-layers.md) (🧪 learned).
-
 | Status | Topic | In Job Finder |
 |--------|-------|---------------|
+| ✅ | Architecture: modular monolith + clean layers, enforced by Spring Modulith + ArchUnit ([note 19](19-clean-architecture.md), [ADR 0001](../docs/adr/0001-modular-clean-architecture.md)) | Every feature module |
 | 🧪 | REST APIs with Spring Web MVC: `@RestController`, DTOs, status codes ([note 16](16-rest-controller.md)), request binding ([note 17](17-request-mapping-and-binding.md)); validation 🔜 | `GET /jobs`, `POST /jobs` |
 | ✅ | API versioning: path `/api/v1` with Spring 7 built-in support, tested ([note 18](18-api-versioning.md)) | Safe evolution of the API |
 | ✅ | Problem Details (RFC 9457) error format enabled + tested ([note 16 §7](16-rest-controller.md)) | Standard error responses |
