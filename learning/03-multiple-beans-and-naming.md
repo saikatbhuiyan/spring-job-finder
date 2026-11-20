@@ -16,8 +16,13 @@ Builds on [note 02](02-spring-ioc-and-beans.md).
 
 ## 1. In this project
 
-[ProjectConfig.java](../src/main/java/com/shahabuddin/config/ProjectConfig.java) now
-declares **three** `Vehicle` beans:
+> **History (2026-11-20):** these three `@Bean` Vehicle methods were later removed, when
+> `Vehicle` became a scanned `@Component` (see [note 04 §4](04-component-scan-and-bean-lifecycle.md)).
+> The code below is how [ProjectConfig.java](../src/main/java/com/shahabuddin/config/ProjectConfig.java)
+> looked at commit `bee9000` (`git show bee9000:src/main/java/com/shahabuddin/config/ProjectConfig.java`).
+> The concepts still apply.
+
+`ProjectConfig` declared **three** `Vehicle` beans:
 
 ```java
 @Configuration

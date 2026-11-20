@@ -106,13 +106,43 @@ Every dependency you add is identified by the same three coordinates.
         <artifactId>spring-context</artifactId>
         <version>7.0.10</version>
     </dependency>
+    <dependency>
+        <groupId>jakarta.annotation</groupId>
+        <artifactId>jakarta.annotation-api</artifactId>
+        <version>3.0.0</version>
+    </dependency>
 </dependencies>
 ```
-This is the only library we asked for: **Spring Context**, from **Spring Framework 7**.
+
+| Dependency | Why |
+|------------|-----|
+| `spring-context` | **Spring Framework 7**: the IoC container (notes 02–04) |
+| `jakarta.annotation-api` | `@PostConstruct` / `@PreDestroy` (added 2026-11-20, see [note 04 §8](04-component-scan-and-bean-lifecycle.md)) |
+
+### ✅ Mistake fixed (2026-11-20): `<dependency>` outside `<dependencies>`
+
+The jakarta dependency was first pasted **after** the closing `</dependencies>` tag:
+
+```xml
+    </dependencies>
+    <dependency>          ❌ not allowed here
+        ...
+    </dependency>
+```
+
+Maven refused to build anything:
+
+```text
+Malformed POM pom.xml: Unrecognised tag: 'dependency' ... line 24, column 17
+```
+
+**Lesson:** every `<dependency>` must sit **inside** the single `<dependencies>` block.
+The error gives the line and column, so look there first. After editing `pom.xml`, also
+click **"Load Maven Changes"** in the IDE so it picks up the new library.
 
 ### Transitive dependencies
 
-We added **one** dependency, but Maven downloaded **nine** jars. That's because
+We asked for `spring-context`, but Maven downloaded **nine** jars for it. That's because
 `spring-context` itself depends on other libraries, and Maven pulls those in automatically.
 These are called **transitive dependencies**.
 

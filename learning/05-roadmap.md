@@ -1,4 +1,4 @@
-# 04 — Roadmap: From Spring Core to the Job Finder App
+# 05 — Roadmap: From Spring Core to the Job Finder App
 
 This is the planned learning path. Each item becomes its own numbered note once it is
 learned or applied, and its status changes in the [README](README.md).
@@ -12,10 +12,10 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | ✅ | IoC container, `@Configuration`, `@Bean`, `getBean` | [Note 02](02-spring-ioc-and-beans.md) |
 | ✅ | Multiple beans of the same type, `@Bean("name")`, aliases, `@Description` | [Note 03](03-multiple-beans-and-naming.md) |
 | 🔜 | `@Primary`, `@Qualifier` | Choosing a default or specific bean among several of the same type |
-| 🔜 | `@Component`, `@ComponentScan`, stereotypes (`@Service`, `@Repository`, `@Controller`) | Letting Spring find beans automatically instead of writing `@Bean` methods |
+| ✅ | `@Component`, `@ComponentScan`, stereotypes (`@Service`, `@Repository`, `@Controller`) | [Note 04](04-component-scan-and-bean-lifecycle.md) |
 | 🔜 | Dependency injection: constructor (preferred), setter, field | `@Autowired`, why constructor injection plus `final` fields is best practice |
 | 🔜 | Bean scopes: singleton, prototype | Lifetime of objects |
-| 🔜 | Bean lifecycle: `@PostConstruct`, `@PreDestroy` | Init and cleanup hooks |
+| ✅ | Bean lifecycle: `InitializingBean`/`DisposableBean` (applied), `@PostConstruct`/`@PreDestroy` (🧪 learned) | [Note 04](04-component-scan-and-bean-lifecycle.md) |
 | 🔜 | Eager vs lazy initialization: `@Lazy` | When beans are created |
 | 🔜 | Externalised configuration: `@PropertySource`, `@Value` | Keeping settings out of code |
 | 🔜 | AOP basics: `@Aspect`, `@Before`, `@Around` | Cross-cutting concerns such as logging and timing |

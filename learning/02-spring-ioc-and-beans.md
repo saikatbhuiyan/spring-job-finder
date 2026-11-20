@@ -39,7 +39,7 @@ public class JobService {
 }
 ```
 
-(We'll use injection in an upcoming step; see the [roadmap](04-roadmap.md).)
+(We'll use injection in an upcoming step; see the [roadmap](05-roadmap.md).)
 
 ## 3. Key vocabulary
 
@@ -273,8 +273,8 @@ Spring can't guess which one you mean. The options:
 `ApplicationContext` holds resources (and later, database connections and thread pools).
 Close it when you're done, so Spring can:
 
-1. Run every bean's cleanup ("destroy") callbacks, e.g. methods marked `@PreDestroy`
-   (🔜 bean lifecycle).
+1. Run every bean's cleanup ("destroy") callbacks, e.g. `DisposableBean.destroy()` or
+   methods marked `@PreDestroy` (see [note 04](04-component-scan-and-bean-lifecycle.md)).
 2. Destroy the singletons and release what they hold.
 3. Mark the context inactive, so no more beans can be fetched from it.
 
