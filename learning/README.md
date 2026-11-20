@@ -25,6 +25,7 @@ Read the notes in order. Each note builds on the previous one.
 | 12 | [Programmatic bean registration](12-programmatic-bean-registration.md) | `registerBean`, `registerSingleton`, Spring 7 `BeanRegistrar`, `BeanDefinitionRegistryPostProcessor`, config-driven beans | 🧪 Verified in a demo |
 | 13 | [Bean scopes (all six)](13-bean-scopes.md) | singleton, prototype, request, session, application, websocket; prototype-in-singleton trap and fixes; scoped proxies; custom scopes | ✅ singleton; others 🧪 |
 | 14 | [Eager & lazy instantiation](14-eager-and-lazy-instantiation.md) | Default eager singletons, `@Lazy` placements, eager-needs-lazy trap, injection-point proxies, fail-fast trade-off, global lazy init | ✅ eager; `@Lazy` 🧪 |
+| 15 | [`@SpringBootApplication`, Spring Boot setup, health endpoint](15-spring-boot-application-and-health.md) | What `@SpringBootApplication` is made of, auto-configuration, Boot 4 starters, Actuator health/liveness/readiness, tests | ✅ Applied |
 
 **What's next:** see the [roadmap](roadmap.md) for planned topics, from Spring Core to the
 full Job Finder app.
@@ -69,3 +70,5 @@ Each note follows the same structure, so it's easy to come back and revise:
 | 2026-11-20 | Studied programmatic bean registration incl. Spring 7 `BeanRegistrar` | 12 |
 | 2026-11-20 | Studied all six bean scopes (web scopes simulated), scope mixing, scoped proxies, `thread` scope | 13 |
 | 2026-11-20 | Studied eager vs lazy instantiation (`@Lazy` placements, traps, fail-fast) | 14 |
+| 2026-11-20 | Singleton vs prototype in depth: per-injection instances, `destroyBean`, runtime args, singleton data-leak demo | 13 §10 |
+| 2026-11-20 | **Moved to Spring Boot 4.2.0**: `JobFinderApplication`, Actuator health with liveness/readiness probes, 5 HTTP tests. Spring Core demo code removed (kept at tag `spring-core-basics`) | 15 · banners in 00–04 |

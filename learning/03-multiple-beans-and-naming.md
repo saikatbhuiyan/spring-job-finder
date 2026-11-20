@@ -1,5 +1,11 @@
 # 03 — Multiple Beans of the Same Type, Bean Names and Aliases
 
+> **History note (2026-11-20):** the project has since moved to **Spring Boot** (see
+> [note 15](15-spring-boot-application-and-health.md)). The plain-Spring code shown in this note
+> (`Main`, `Vehicle`, `ProjectConfig`) was removed from `main` and is preserved at the git tag
+> [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).
+> The concepts are unchanged; Spring Boot builds on all of them.
+
 ## Goal
 
 Real applications often have several beans of the **same type**: two `DataSource`s, three
@@ -18,7 +24,7 @@ Builds on [note 02](02-spring-ioc-and-beans.md).
 
 > **History (2026-11-20):** these three `@Bean` Vehicle methods were later removed, when
 > `Vehicle` became a scanned `@Component` (see [note 04 §4](04-component-scan-and-bean-lifecycle.md)).
-> The code below is how [ProjectConfig.java](../src/main/java/com/shahabuddin/config/ProjectConfig.java)
+> The code below is how [ProjectConfig.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/config/ProjectConfig.java)
 > looked at commit `bee9000` (`git show bee9000:src/main/java/com/shahabuddin/config/ProjectConfig.java`).
 > The concepts still apply.
 
@@ -55,7 +61,7 @@ public class ProjectConfig {
 }
 ```
 
-[Main.java](../src/main/java/com/shahabuddin/Main.java) asks for each `Vehicle` **by name
+[Main.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/Main.java) asks for each `Vehicle` **by name
 and type**:
 
 ```java

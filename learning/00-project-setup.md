@@ -1,5 +1,12 @@
 # 00 — Project Setup: JDK, Maven, and pom.xml
 
+> **Update (2026-11-20):** the project is now a **Spring Boot 4.2** application. The JDK,
+> Maven, and dependency concepts below still apply, but the current `pom.xml` (Boot parent,
+> starters, Boot Maven plugin) and the way to run the app are explained in
+> [note 15](15-spring-boot-application-and-health.md). Sections 3 and 6 describe the original
+> plain-Spring setup, preserved at the git tag
+> [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).
+
 ## Goal
 
 Understand the tools the project is built on before writing any Spring code:
@@ -204,8 +211,12 @@ job-finder/
 
 ## 6. How to run the project
 
+> **Current (Spring Boot):** `mvn spring-boot:run`, then open `http://localhost:8080/actuator/health`.
+> See [note 15 §6](15-spring-boot-application-and-health.md). The commands below are for the
+> original plain-Spring version.
+
 ### From the IDE
-Open [Main.java](../src/main/java/com/shahabuddin/Main.java) and click the green ▶ next to
+Open [Main.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/Main.java) and click the green ▶ next to
 `main`.
 
 ### From the terminal (verified)

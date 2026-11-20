@@ -306,6 +306,125 @@ instead.
 
 ---
 
+## 10. Singleton vs Prototype in depth (verified)
+
+### Side by side
+
+| | **Singleton** | **Prototype** |
+|-|---------------|---------------|
+| Instances | **One** per container, shared | **New one per request** (each `getBean`, each injection point) |
+| Declared | Default, nothing to write | `@Scope("prototype")` / `SCOPE_PROTOTYPE` |
+| Created | Eagerly at startup (note 14) | On demand, never at startup by itself |
+| `@PostConstruct` | Once | **For every new instance** |
+| `@PreDestroy` | ✅ On context close | ❌ **Never** by Spring; call `destroyBean` yourself (below) |
+| Who tracks it | Spring, until shutdown | You, once Spring hands it over |
+| State | Must be **stateless** (shared by all threads) | **May hold state**, since each user gets their own copy |
+| Thread safety | Your responsibility, by keeping it stateless | Safe as long as each instance is used by one caller |
+| Cost | Created once | Created every time (more objects, more GC work) |
+| Injected into a singleton | Fine | ⚠️ Captured once (§4); use `ObjectProvider` |
+| Circular dependencies | Field cycles can resolve | Always fail (note 10 §3) |
+| Typical use | Services, repositories, controllers, clients | Stateful helpers, builders, per-task sessions |
+
+### Each injection point gets its own prototype
+
+```java
+@Component @Scope("prototype") class ImportSession { int count; void add() { count++; } }
+
+@Component class LinkedInImporter { LinkedInImporter(ImportSession s) { ... } }
+@Component class IndeedImporter   { IndeedImporter(ImportSession s)   { ... } }
+```
+
+```text
++ ImportSession#1 created
++ ImportSession#2 created
+LinkedIn has ImportSession#1(count=2), Indeed has ImportSession#2(count=1), same object? false
+```
+
+Each importer has its **own** session, so their counters don't interfere. With a singleton
+`ImportSession`, both would share one counter (3).
+
+### Destroying a prototype yourself
+
+Spring won't call `@PreDestroy` on prototypes, but you can ask it to run the destroy callbacks
+for a specific instance:
+
+```java
+var session = ctx.getBean(ImportSession.class);
+// ... use it ...
+ctx.getBeanFactory().destroyBean(session);
+```
+
+```text
++ ImportSession#3 created
+calling destroyBean...
+- ImportSession#3 destroyed        ← @PreDestroy ran because we asked
+```
+
+Note that **none** of the prototypes were destroyed when the context closed (the output after
+`closing context` is empty).
+
+### Prototypes with runtime arguments
+
+A prototype's constructor can take values that are only known at runtime, such as user input:
+
+```java
+@Component @Scope("prototype")
+class JobAlert {
+    JobAlert(String email, String keyword) { ... }
+}
+
+@Component class AlertFactory {
+    private final ObjectProvider<JobAlert> alerts;
+    AlertFactory(ObjectProvider<JobAlert> alerts) { this.alerts = alerts; }
+    JobAlert create(String email, String keyword) { return alerts.getObject(email, keyword); }
+}
+```
+
+```text
+JobAlert(alice@x.com, java) / JobAlert(bob@x.com, python)
+getBean(type, args): JobAlert(carol@x.com, kotlin)       ← ctx.getBean(JobAlert.class, "carol@x.com", "kotlin")
+```
+
+The arguments are passed to the constructor. Spring still manages the object (`@PostConstruct`,
+`@Autowired` setters), and you supply the runtime values. This works only for prototypes:
+a singleton is created once, so runtime arguments make no sense for it.
+
+### ⚠️ Why singletons must be stateless: a deterministic demo
+
+```java
+@Component class UnsafeGreeter {            // singleton
+    private String user;                    // ❌ mutable field
+    String greet(String u) { user = u; /* ...other work... */ return "Hello " + user; }
+}
+```
+
+I ran two "requests" on two threads, forcing the worst-case timing with latches (Alice sets
+`user`, then Bob sets `user`, then Alice reads it):
+
+```text
+Alice's request got: "Hello Bob"   Bob's request got: "Hello Bob"
+stateless version:   "Hello Alice" / "Hello Bob"
+```
+
+**Alice saw Bob's data.** In a real server this timing happens by chance under load, which makes
+the bug rare, random, and very hard to reproduce. In Job Finder it could mean one user seeing
+another user's applications. The stateless version keeps `user` in a **local variable**, so
+each call has its own.
+
+**Fixes, in order of preference:**
+1. Make the singleton **stateless**: pass data through parameters and local variables. ✅
+2. Move per-request state into a **request-scoped** bean (§6).
+3. Use a **prototype** obtained via `ObjectProvider` for each task.
+4. (Rarely) thread-safe types like `AtomicInteger` or `ConcurrentHashMap`, for state that really
+   must be shared, such as a counter.
+
+### Decision in one line
+
+> Default to **singleton + stateless**. Use **prototype** only when an object must hold state
+> for one caller or task, and get it through `ObjectProvider`.
+
+---
+
 ## Common mistakes
 
 | Mistake | Result |
@@ -341,6 +460,17 @@ request's or session's instance on each method call.
 
 **Q: Are singleton beans thread-safe?**
 Spring doesn't make them thread-safe. Design them stateless (no mutable per-request fields).
+
+**Q: How do you destroy a prototype bean?**
+Spring doesn't track prototypes, so call `context.getBeanFactory().destroyBean(instance)` (or clean up
+manually) when you're done with it.
+
+**Q: How do you pass runtime arguments to a prototype?**
+`ObjectProvider<T>.getObject(args...)` or `context.getBean(Type.class, args...)`. The arguments go to
+the constructor.
+
+**Q: A prototype is injected into two different singletons. Same instance?**
+No. Each injection point receives its own new instance.
 
 **Q: Difference between singleton and application scope?**
 Singleton is per Spring `ApplicationContext`. Application is per `ServletContext`, and is also

@@ -30,7 +30,8 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 
 | Status | Topic |
 |--------|-------|
-| 🔜 | Migrating this project to Spring Boot 4 (starters, `@SpringBootApplication`, auto-configuration) |
+| ✅ | Migrated to Spring Boot 4.2 (starters, `@SpringBootApplication`, auto-configuration): [note 15](15-spring-boot-application-and-health.md) |
+| ✅ | Health endpoint with Actuator (liveness/readiness probes): [note 15 §5](15-spring-boot-application-and-health.md) |
 | 🔜 | `application.yml`, profiles (`dev`, `prod`) |
 | 🔜 | Logging (SLF4J + Logback) |
 

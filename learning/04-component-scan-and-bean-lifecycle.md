@@ -1,5 +1,11 @@
 # 04 — `@Component`, `@ComponentScan` and the Bean Lifecycle
 
+> **History note (2026-11-20):** the project has since moved to **Spring Boot** (see
+> [note 15](15-spring-boot-application-and-health.md)). The plain-Spring code shown in this note
+> (`Main`, `Vehicle`, `ProjectConfig`) was removed from `main` and is preserved at the git tag
+> [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).
+> The concepts are unchanged; Spring Boot builds on all of them.
+
 ## Goal
 
 Two new ideas:
@@ -70,7 +76,7 @@ methods returning it gives you several beans (this project briefly had 4 `Vehicl
 
 ### 2. In this project
 
-[Vehicle.java](../src/main/java/com/shahabuddin/beans/Vehicle.java):
+[Vehicle.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/beans/Vehicle.java):
 
 ```java
 package com.shahabuddin.beans;
@@ -79,7 +85,7 @@ package com.shahabuddin.beans;
 public class Vehicle implements InitializingBean, DisposableBean { ... }
 ```
 
-[ProjectConfig.java](../src/main/java/com/shahabuddin/config/ProjectConfig.java):
+[ProjectConfig.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/config/ProjectConfig.java):
 
 ```java
 @Configuration
@@ -188,7 +194,7 @@ buffers.
 
 ### 7. In this project: `InitializingBean` and `DisposableBean`
 
-[Vehicle.java](../src/main/java/com/shahabuddin/beans/Vehicle.java):
+[Vehicle.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/beans/Vehicle.java):
 
 ```java
 @Component
@@ -259,7 +265,7 @@ rather than both.
 
 `@PostConstruct` and `@PreDestroy` are **not part of Spring or of the JDK**. They used to
 ship with Java (`javax.annotation`) but were removed in Java 11, and now live in the
-Jakarta EE library. So [pom.xml](../pom.xml) needs:
+Jakarta EE library. So [pom.xml](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/pom.xml) needs:
 
 ```xml
 <dependency>

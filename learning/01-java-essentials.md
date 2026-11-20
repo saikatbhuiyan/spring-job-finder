@@ -1,5 +1,11 @@
 # 01 — Java Essentials Used in This Project
 
+> **History note (2026-11-20):** the project has since moved to **Spring Boot** (see
+> [note 15](15-spring-boot-application-and-health.md)). The plain-Spring code shown in this note
+> (`Main`, `Vehicle`, `ProjectConfig`) was removed from `main` and is preserved at the git tag
+> [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).
+> The concepts are unchanged; Spring Boot builds on all of them.
+
 ## Goal
 
 Understand every piece of plain Java syntax that appears in the code so far, so the Spring
@@ -39,7 +45,7 @@ How this project uses packages:
 
 ## 2. Classes, objects and fields
 
-[Vehicle.java](../src/main/java/com/shahabuddin/beans/Vehicle.java):
+[Vehicle.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/beans/Vehicle.java):
 
 ```java
 public class Vehicle {
@@ -113,7 +119,7 @@ static void main() { ... }
 
 ## 6. The `main` method and `IO.println` (Java 25 features)
 
-[Main.java](../src/main/java/com/shahabuddin/Main.java):
+[Main.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/Main.java):
 
 ```java
 public class Main {
@@ -220,7 +226,7 @@ try (var context = new AnnotationConfigApplicationContext(ProjectConfig.class)) 
 - The variable only exists inside the block. Use it after the `}` and you get a compile
   error.
 
-Used in [Main.java](../src/main/java/com/shahabuddin/Main.java) since 2026-11-19
+Used in [Main.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/Main.java) since 2026-11-19
 (see note 02 §9).
 
 ---
@@ -264,7 +270,7 @@ Java naming rules are conventions, not compiler rules, but everyone follows them
 | Constant | `UPPER_SNAKE_CASE` | `MAX_RESULTS` |
 | Package | all lowercase | `com.shahabuddin.beans` |
 
-✅ **Fixed (2026-11-19).** In [ProjectConfig.java](../src/main/java/com/shahabuddin/config/ProjectConfig.java)
+✅ **Fixed (2026-11-19).** In [ProjectConfig.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/config/ProjectConfig.java)
 the method was first named `LuckyNumber()`, which broke this rule. It's now `luckyNumber()`.
 This matters more than style in Spring, because **the method name becomes the bean's
 name**. See note 02 §6.

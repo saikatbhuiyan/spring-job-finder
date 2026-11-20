@@ -1,5 +1,11 @@
 # 02 — Spring IoC Container and Beans
 
+> **History note (2026-11-20):** the project has since moved to **Spring Boot** (see
+> [note 15](15-spring-boot-application-and-health.md)). The plain-Spring code shown in this note
+> (`Main`, `Vehicle`, `ProjectConfig`) was removed from `main` and is preserved at the git tag
+> [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).
+> The concepts are unchanged; Spring Boot builds on all of them.
+
 ## Goal
 
 Understand the core idea of Spring: **you stop creating objects yourself with `new`; Spring
@@ -61,12 +67,12 @@ public class JobService {
 
 ### Step 1: A plain Java class
 
-[Vehicle.java](../src/main/java/com/shahabuddin/beans/Vehicle.java) is an ordinary class.
+[Vehicle.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/beans/Vehicle.java) is an ordinary class.
 It has **no Spring annotations**, and doesn't need any. Any class can become a bean.
 
 ### Step 2: Create the object yourself (no Spring)
 
-[Main.java](../src/main/java/com/shahabuddin/Main.java):
+[Main.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/Main.java):
 
 ```java
 Vehicle vehicle = new Vehicle();
@@ -78,7 +84,7 @@ This object lives only in this variable. Spring knows nothing about it.
 
 ### Step 3: Write the recipes in a configuration class
 
-[ProjectConfig.java](../src/main/java/com/shahabuddin/config/ProjectConfig.java):
+[ProjectConfig.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/config/ProjectConfig.java):
 
 > This is the **first version** of the config, with one `Vehicle`. The project now has three
 > `Vehicle` beans; see [note 03](03-multiple-beans-and-naming.md).
