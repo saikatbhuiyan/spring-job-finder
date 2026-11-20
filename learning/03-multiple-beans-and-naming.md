@@ -477,6 +477,9 @@ fully-qualified name generator (option C).
 
 ## 10. 🧪 `@Primary` in depth (verified)
 
+> `@Qualifier` in depth and the full `@Qualifier` vs `@Primary` comparison:
+> [note 11](11-primary-vs-qualifier.md).
+
 ### What it does
 
 `@Primary` marks one bean as **the default** when several beans of the same type exist and

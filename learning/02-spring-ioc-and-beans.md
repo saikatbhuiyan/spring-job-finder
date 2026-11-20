@@ -428,7 +428,7 @@ lazy with `@Lazy` (🔜 roadmap).
 
 | Mistake | What happens |
 |---------|--------------|
-| Forgetting `@Configuration` and passing the class anyway | It still mostly works ("lite mode"), but calls *between* `@Bean` methods create new objects instead of returning the singleton. Always use `@Configuration`. |
+| Forgetting `@Configuration` and passing the class anyway | It still mostly works ("lite mode"), but calls *between* `@Bean` methods create new objects instead of returning the singleton (verified in [note 08 §1](08-bean-wiring.md)). Always use `@Configuration`. |
 | Forgetting `@Bean` on a method | That object is never registered → `NoSuchBeanDefinitionException` |
 | Capitalised method name | Bean name is capitalised too (`LuckyNumber`). I made this mistake and fixed it; see §6. |
 | `(Type) getBean("name")` | A cast that fails late with `ClassCastException`; use `getBean("name", Type.class)` |

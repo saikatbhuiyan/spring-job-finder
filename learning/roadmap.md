@@ -11,10 +11,12 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 |--------|-------|-----------|
 | ✅ | IoC container, `@Configuration`, `@Bean`, `getBean` | [Note 02](02-spring-ioc-and-beans.md) |
 | ✅ | Multiple beans of the same type, `@Bean("name")`, aliases, `@Description` | [Note 03](03-multiple-beans-and-naming.md) |
-| 🧪 | `@Primary`, `@Qualifier`, `@Fallback`, `List`/`Map` injection | [Note 03 §8](03-multiple-beans-and-naming.md); will be ✅ once injection is in the code |
+| 🧪 | `@Primary`, `@Qualifier`, `@Fallback`, `List`/`Map` injection | [Note 03 §8](03-multiple-beans-and-naming.md), [note 11](11-primary-vs-qualifier.md); will be ✅ once injection is in the code |
 | ✅ | `@Component`, `@ComponentScan` | [Note 04](04-component-scan-and-bean-lifecycle.md) |
 | 🧪 | Stereotypes in depth: `@Service`, `@Repository`, `@Controller`, `@RestController`, custom stereotypes | [Note 07](07-stereotype-annotations.md) |
-| 🔜 | Dependency injection: constructor (preferred), setter, field | `@Autowired`, why constructor injection plus `final` fields is best practice |
+| 🧪 | Dependency injection: constructor (preferred), setter, field | [Note 08](08-bean-wiring.md); becomes ✅ when a real dependency is wired in the code |
+| 🧪 | Autowiring in depth: resolution order, collections, generics | [Note 09](09-autowiring.md) |
+| 🧪 | Circular dependencies: causes and design fixes | [Note 10](10-circular-dependencies.md) |
 | 🔜 | Bean scopes: singleton, prototype | Lifetime of objects |
 | ✅ | Bean lifecycle: `InitializingBean`/`DisposableBean` (applied), `@PostConstruct`/`@PreDestroy` (🧪 learned) | [Note 04](04-component-scan-and-bean-lifecycle.md) |
 | 🧪 | Modular configuration with `@Import` | [Note 06](06-import-annotation.md) |

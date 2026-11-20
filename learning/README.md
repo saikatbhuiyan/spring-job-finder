@@ -18,6 +18,10 @@ Read the notes in order. Each note builds on the previous one.
 | 05 | [Layers in a backend application](05-backend-layers.md) | Controller → Service → Repository, DTOs vs entities, layering rules, package-by-feature, Job Finder plan | 🧪 Verified in a demo |
 | 06 | [The `@Import` annotation](06-import-annotation.md) | Modular configuration, importing configs and plain classes, `ImportSelector`, how `@Enable…` works, `@Import` vs `@ComponentScan` | 🧪 Verified in a demo |
 | 07 | [Stereotype annotations](07-stereotype-annotations.md) | `@Component` family tree, `@Service`/`@Repository`/`@Controller`/`@RestController`/`@Configuration`, what each adds, custom stereotypes | ✅ `@Component`/`@Configuration`; others 🧪 |
+| 08 | [Bean wiring (dependency injection)](08-bean-wiring.md) | `@Bean` method call vs parameter, lite mode, field/setter/constructor `@Autowired`, optional deps, circular dependencies | 🧪 Verified in a demo |
+| 09 | [Autowiring in depth](09-autowiring.md) | Resolution algorithm, field vs parameter name matching, interfaces, collections + `@Order`, generics as qualifiers, static fields | 🧪 Verified in a demo |
+| 10 | [Circular dependencies](10-circular-dependencies.md) | Why constructor cycles fail, early references, order-dependent failures, `@Lazy`/`ObjectProvider` workarounds, design fixes (extract, events) | 🧪 Verified in a demo |
+| 11 | [`@Primary`, `@Qualifier`, and `@Qualifier` vs `@Primary`](11-primary-vs-qualifier.md) | Injection points, strict matching, qualifier labels and `List` filtering, custom qualifiers, side-by-side comparison | 🧪 Verified in a demo |
 
 **What's next:** see the [roadmap](roadmap.md) for planned topics, from Spring Core to the
 full Job Finder app.
@@ -55,3 +59,7 @@ Each note follows the same structure, so it's easy to come back and revise:
 | 2026-11-20 | Studied backend layers (controller/service/repository, DTOs, package-by-feature) with a verified demo. Roadmap renamed to `roadmap.md` | 05 |
 | 2026-11-20 | Studied `@Import` (configs, plain classes, `ImportSelector`, `@Enable…` internals, circular imports) | 06 |
 | 2026-11-20 | Studied stereotype annotations (meta-annotations, runtime classes, custom `@UseCase`) | 07 |
+| 2026-11-20 | Studied bean wiring: method call vs parameter, lite mode, three injection styles, optional deps, circular deps | 08 |
+| 2026-11-20 | Studied autowiring in depth (resolution order, collections, generics, edge cases) | 09 |
+| 2026-11-20 | Studied circular dependencies: causes, how Spring resolves some, workarounds, design fixes | 10 |
+| 2026-11-20 | Studied `@Primary` vs `@Qualifier` (injection points, labels, custom qualifiers, precedence) | 11 |
