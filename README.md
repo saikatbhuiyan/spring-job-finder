@@ -1,22 +1,22 @@
 # Spring Job Finder
 
-A job-search backend built with **Java 25** and **Spring**, developed step by step as a
+A job-search backend built with **Java 25** and **Spring Boot 4**, developed step by step as a
 learning project. Every concept used in the code, and many studied alongside it, is
 documented and verified in the [`learning/`](learning/README.md) notes.
 
-> **Status:** early stage. The project is currently at the **Spring Core** stage (IoC
-> container, beans, dependency injection, scopes, lifecycle). The Job Finder REST API is
-> built on top of this foundation in the next phases; see the [roadmap](learning/roadmap.md).
+> **Status:** early stage. The Spring Boot application is set up with a production-style
+> **health endpoint** (Actuator, liveness/readiness probes) and HTTP tests. The Job Finder REST
+> API comes next; see the [roadmap](learning/roadmap.md).
 
 ## Tech stack
 
 | | Current | Planned |
 |-|---------|---------|
 | Language | Java 25 | |
-| Framework | Spring Framework 7 (`spring-context`) | Spring Boot 4, Spring Web MVC, Spring Data JPA, Spring Security |
+| Framework | Spring Boot 4.2 (Spring Framework 7.1), Spring MVC, Actuator | Spring Data JPA, Spring Security |
 | Build | Maven | |
 | Database | | PostgreSQL + Flyway |
-| Testing | | JUnit 5, Testcontainers |
+| Testing | JUnit 6, `@SpringBootTest` + `RestTestClient` | Testcontainers |
 | Ops | | Docker, GitHub Actions |
 
 ## Run it
@@ -24,43 +24,63 @@ documented and verified in the [`learning/`](learning/README.md) notes.
 Requirements: JDK 25 and Maven 3.9+.
 
 ```bash
-mvn -q compile exec:java -Dexec.mainClass=com.shahabuddin.Main
+mvn spring-boot:run
 ```
 
-Current output (a `@Component` bean with init/destroy lifecycle callbacks):
+Then check the health endpoint:
 
-```text
-Vehicle bean initialized.
-Vehicle name from Spring Context is: null
-Vehicle bean destroyed.
+```bash
+curl localhost:8080/actuator/health
+# {"groups":["liveness","readiness"],"status":"UP"}
 ```
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /actuator/health` | Overall application health |
+| `GET /actuator/health/liveness` | Is the app alive? (restart if not) |
+| `GET /actuator/health/readiness` | Can it take traffic? |
+
+Build and run the executable jar:
+
+```bash
+mvn clean package
+java -jar target/job-finder-0.0.1-SNAPSHOT.jar
+```
+
+Run the tests: `mvn test`
 
 ## Project structure
 
 ```text
-src/main/java/com/shahabuddin/
-├── Main.java                 # starts the Spring ApplicationContext
-├── beans/Vehicle.java        # @Component with InitializingBean / DisposableBean
-└── config/ProjectConfig.java # @Configuration + @ComponentScan
-learning/                     # step-by-step notes (see below)
+src/main/java/com/shahabuddin/jobfinder/
+└── JobFinderApplication.java      # @SpringBootApplication entry point
+src/main/resources/
+└── application.properties         # Actuator health configuration
+src/test/java/com/shahabuddin/jobfinder/
+└── HealthEndpointTests.java       # starts the app, calls the endpoints over HTTP
+learning/                          # step-by-step notes (see below)
 ```
 
 ## Learning notes
 
-The [`learning/`](learning/README.md) folder is a 15-part, step-by-step journal. Each note
-explains a concept from scratch, shows the code, includes **real output from running
-experiments** on Spring 7, and ends with common mistakes and interview questions.
+The [`learning/`](learning/README.md) folder is a step-by-step journal (16 notes so far). Each
+note explains a concept from scratch, shows the code, includes **real output from running
+experiments**, and ends with common mistakes and interview questions.
 
 Topics so far: project setup, Java essentials, the IoC container (`BeanFactory` vs
 `ApplicationContext`), bean naming, `@Primary` / `@Qualifier`, component scanning and
 stereotypes, the bean lifecycle, `@Import`, backend layering, dependency injection and
 autowiring, circular dependencies, programmatic bean registration (Spring 7
-`BeanRegistrar`), all six bean scopes, and eager vs lazy initialization.
+`BeanRegistrar`), all six bean scopes, eager vs lazy initialization, and
+`@SpringBootApplication` with Actuator health checks.
+
+The original plain-Spring demo code from the early notes is preserved at the git tag
+[`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).
 
 ## Roadmap
 
-1. **Spring Core** (in progress): configuration, DI, scopes, lifecycle, AOP, testing
-2. **Spring Boot**: auto-configuration, profiles, logging
+1. **Spring Core** ✅ (learned): configuration, DI, scopes, lifecycle
+2. **Spring Boot** (in progress): application setup ✅, health endpoint ✅, profiles, logging
 3. **Job Finder API**: REST endpoints for jobs, companies and applications, JPA +
    PostgreSQL, search and pagination, JWT security, OpenAPI docs, Docker, CI
 
