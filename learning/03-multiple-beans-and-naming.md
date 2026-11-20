@@ -436,6 +436,8 @@ same simple name (see the clash below).
 
 ### D. Registering a bean in code
 
+> All the programmatic options (incl. Spring 7 `BeanRegistrar`): [note 12](12-programmatic-bean-registration.md).
+
 ```java
 var ctx = new AnnotationConfigApplicationContext();
 ctx.registerBean("myCar", StringBuilder.class, () -> new StringBuilder("registered in code"));

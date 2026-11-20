@@ -318,7 +318,7 @@ try (var context = new AnnotationConfigApplicationContext(ProjectConfig.class)) 
 try-with-resources (or `finally`) guarantees.
 
 > Destroy hooks only run for **singleton** beans. For `prototype`-scoped beans Spring
-> doesn't track the instances, so it never destroys them (🔜 bean scopes).
+> doesn't track the instances, so it never destroys them (verified in [note 13 §3](13-bean-scopes.md)).
 
 ---
 

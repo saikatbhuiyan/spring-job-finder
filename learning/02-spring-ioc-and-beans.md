@@ -229,7 +229,7 @@ ctx.getBean(Vehicle.class) == ctx.getBean(Vehicle.class)   // true
 > A Spring singleton is one instance **per container, per bean definition**. Two `@Bean`
 > methods returning `Vehicle` give two separate singleton beans.
 
-Other scopes (`prototype`, `request`, `session`) are 🔜 on the roadmap.
+All six scopes (`prototype`, `request`, `session`, …), verified: [note 13](13-bean-scopes.md).
 
 ---
 
@@ -420,7 +420,7 @@ What this shows:
 If a bean is misconfigured, an `ApplicationContext` fails **at startup**, when you're
 watching. A lazy `BeanFactory` would fail later, maybe hours afterwards, on the first request
 that needs that bean. Eager startup = **fail fast**. You can still make individual beans
-lazy with `@Lazy` (🔜 roadmap).
+lazy with `@Lazy`; see [note 14](14-eager-and-lazy-instantiation.md).
 
 ---
 

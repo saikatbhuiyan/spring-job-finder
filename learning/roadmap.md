@@ -17,10 +17,11 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | 🧪 | Dependency injection: constructor (preferred), setter, field | [Note 08](08-bean-wiring.md); becomes ✅ when a real dependency is wired in the code |
 | 🧪 | Autowiring in depth: resolution order, collections, generics | [Note 09](09-autowiring.md) |
 | 🧪 | Circular dependencies: causes and design fixes | [Note 10](10-circular-dependencies.md) |
-| 🔜 | Bean scopes: singleton, prototype | Lifetime of objects |
+| 🧪 | Bean scopes: all six (singleton ✅ in use) | [Note 13](13-bean-scopes.md) |
 | ✅ | Bean lifecycle: `InitializingBean`/`DisposableBean` (applied), `@PostConstruct`/`@PreDestroy` (🧪 learned) | [Note 04](04-component-scan-and-bean-lifecycle.md) |
 | 🧪 | Modular configuration with `@Import` | [Note 06](06-import-annotation.md) |
-| 🔜 | Eager vs lazy initialization: `@Lazy` | When beans are created |
+| 🧪 | Programmatic bean registration (`BeanRegistrar`, `registerBean`) | [Note 12](12-programmatic-bean-registration.md) |
+| 🧪 | Eager vs lazy initialization: `@Lazy` | [Note 14](14-eager-and-lazy-instantiation.md) |
 | 🔜 | Externalised configuration: `@PropertySource`, `@Value` | Keeping settings out of code |
 | 🔜 | AOP basics: `@Aspect`, `@Before`, `@Around` | Cross-cutting concerns such as logging and timing |
 | 🔜 | Unit testing with JUnit 5 | `mvn test`, assertions |

@@ -74,6 +74,7 @@ What happened:
 | **A plain class**: no annotations at all | Registers it as a bean, calling its constructor | `@Import(PlainClock.class)` |
 | **An `ImportSelector`** | Calls your code, which **returns class names to import**, decided at runtime | See §5 |
 | **An `ImportBeanDefinitionRegistrar`** | Calls your code to register bean definitions by hand | Used by frameworks |
+| **A `BeanRegistrar`** (Spring 7) | Calls `register(BeanRegistry, Environment)` to register beans in code | See [note 12 §4](12-programmatic-bean-registration.md) |
 
 Several at once:
 

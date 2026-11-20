@@ -22,6 +22,9 @@ Read the notes in order. Each note builds on the previous one.
 | 09 | [Autowiring in depth](09-autowiring.md) | Resolution algorithm, field vs parameter name matching, interfaces, collections + `@Order`, generics as qualifiers, static fields | 🧪 Verified in a demo |
 | 10 | [Circular dependencies](10-circular-dependencies.md) | Why constructor cycles fail, early references, order-dependent failures, `@Lazy`/`ObjectProvider` workarounds, design fixes (extract, events) | 🧪 Verified in a demo |
 | 11 | [`@Primary`, `@Qualifier`, and `@Qualifier` vs `@Primary`](11-primary-vs-qualifier.md) | Injection points, strict matching, qualifier labels and `List` filtering, custom qualifiers, side-by-side comparison | 🧪 Verified in a demo |
+| 12 | [Programmatic bean registration](12-programmatic-bean-registration.md) | `registerBean`, `registerSingleton`, Spring 7 `BeanRegistrar`, `BeanDefinitionRegistryPostProcessor`, config-driven beans | 🧪 Verified in a demo |
+| 13 | [Bean scopes (all six)](13-bean-scopes.md) | singleton, prototype, request, session, application, websocket; prototype-in-singleton trap and fixes; scoped proxies; custom scopes | ✅ singleton; others 🧪 |
+| 14 | [Eager & lazy instantiation](14-eager-and-lazy-instantiation.md) | Default eager singletons, `@Lazy` placements, eager-needs-lazy trap, injection-point proxies, fail-fast trade-off, global lazy init | ✅ eager; `@Lazy` 🧪 |
 
 **What's next:** see the [roadmap](roadmap.md) for planned topics, from Spring Core to the
 full Job Finder app.
@@ -63,3 +66,6 @@ Each note follows the same structure, so it's easy to come back and revise:
 | 2026-11-20 | Studied autowiring in depth (resolution order, collections, generics, edge cases) | 09 |
 | 2026-11-20 | Studied circular dependencies: causes, how Spring resolves some, workarounds, design fixes | 10 |
 | 2026-11-20 | Studied `@Primary` vs `@Qualifier` (injection points, labels, custom qualifiers, precedence) | 11 |
+| 2026-11-20 | Studied programmatic bean registration incl. Spring 7 `BeanRegistrar` | 12 |
+| 2026-11-20 | Studied all six bean scopes (web scopes simulated), scope mixing, scoped proxies, `thread` scope | 13 |
+| 2026-11-20 | Studied eager vs lazy instantiation (`@Lazy` placements, traps, fail-fast) | 14 |
