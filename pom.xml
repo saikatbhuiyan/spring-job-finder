@@ -50,6 +50,16 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- Development only: automatic restart, LiveReload, dev-friendly defaults.
+             runtime + optional: not a compile dependency, not passed on to other projects,
+             and excluded from the packaged jar by spring-boot-maven-plugin. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Testing: JUnit, AssertJ, Spring test support for MVC and actuator -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

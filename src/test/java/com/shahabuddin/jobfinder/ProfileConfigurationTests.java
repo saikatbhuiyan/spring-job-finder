@@ -5,6 +5,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -16,10 +17,12 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -72,7 +75,7 @@ class ProfileConfigurationTests {
             Path java = Path.of(System.getProperty("java.home"), "bin", "java");
             Process process = new ProcessBuilder(
                     java.toString(),
-                    "-cp", System.getProperty("java.class.path"),
+                    "-cp", productionLikeClasspath(),
                     JobFinderApplication.class.getName(),
                     "--spring.profiles.active=" + profile,
                     "--server.port=0",
@@ -102,7 +105,20 @@ class ProfileConfigurationTests {
             assertThat(lines).as("console output of profile '%s'", profile)
                     .anySatisfy(l -> assertThat(l).contains(STARTED));
             assertThat(port).as("HTTP port of profile '%s'", profile).isPositive();
+            assertThat(lines).as("DevTools must not be active in a production-like launch")
+                    .noneSatisfy(l -> assertThat(l).containsAnyOf("devtools", "restartedMain"));
             return app;
+        }
+
+        /**
+         * The test classpath minus spring-boot-devtools. The packaged jar never contains DevTools
+         * (spring-boot-maven-plugin excludes it), and a plain {@code java -cp} launch would otherwise
+         * activate it (restart classloader, dev property defaults), so the child must not see it.
+         */
+        private static String productionLikeClasspath() {
+            return Arrays.stream(System.getProperty("java.class.path").split(File.pathSeparator))
+                    .filter(entry -> !entry.contains("spring-boot-devtools"))
+                    .collect(Collectors.joining(File.pathSeparator));
         }
 
         String get(String path) throws IOException, InterruptedException {

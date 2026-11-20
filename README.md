@@ -24,7 +24,8 @@ documented and verified in the [`learning/`](learning/README.md) notes.
 Requirements: JDK 25 and Maven 3.9+.
 
 ```bash
-mvn spring-boot:run          # starts with the dev profile: readable logs, DEBUG, health details
+mvn spring-boot:run          # dev profile: readable logs, DEBUG, health details,
+                             # and automatic restart on recompile (Spring Boot DevTools)
 ```
 
 Then check the health endpoint:
@@ -57,6 +58,9 @@ SPRING_PROFILES_ACTIVE=prod java -jar target/job-finder-0.0.1-SNAPSHOT.jar   # E
 | Profile | Logs | Health details | Activated by |
 |---------|------|----------------|--------------|
 | `dev` | Compact colored lines, app at DEBUG | Shown | `mvn spring-boot:run` |
+
+DevTools (fast restart) is development-only: it's excluded from the packaged jar, and a test
+fails if it's ever active in a production-like launch.
 | `prod` | Structured **ECS JSON** to stdout | Hidden | `SPRING_PROFILES_ACTIVE=prod` |
 | *(none)* | Spring Boot default pattern | Hidden | Default |
 
@@ -107,7 +111,7 @@ src/test/java/com/shahabuddin/jobfinder/
 ├── HealthEndpointTests.java       # starts the app, calls the endpoints over HTTP
 ├── ErrorResponseTests.java        # locks in the Problem Details error format
 ├── ApiVersioningTests.java        # locks in /api/v1 versioning (Actuator unaffected)
-├── ProfileConfigurationTests.java # starts the real app per profile in a child JVM
+├── ProfileConfigurationTests.java # starts the real app per profile in a child JVM (without DevTools)
 └── architecture/                  # architecture rules (ArchUnit + Spring Modulith) and their tests
 docs/adr/                          # Architecture Decision Records
 learning/                          # step-by-step notes (see below)
@@ -115,7 +119,7 @@ learning/                          # step-by-step notes (see below)
 
 ## Learning notes
 
-The [`learning/`](learning/README.md) folder is a step-by-step journal (21 notes so far). Each
+The [`learning/`](learning/README.md) folder is a step-by-step journal (22 notes so far). Each
 note explains a concept from scratch, shows the code, includes **real output from running
 experiments**, and ends with common mistakes and interview questions.
 
@@ -125,7 +129,7 @@ stereotypes, the bean lifecycle, `@Import`, backend layering, dependency injecti
 autowiring, circular dependencies, programmatic bean registration (Spring 7
 `BeanRegistrar`), all six bean scopes, eager vs lazy initialization,
 `@SpringBootApplication` with Actuator health checks, `@RestController` / REST API design, request mapping and binding, API versioning, clean architecture
-enforced with Spring Modulith and ArchUnit, and per-environment logging with structured JSON.
+enforced with Spring Modulith and ArchUnit, per-environment logging with structured JSON, and DevTools.
 
 The original plain-Spring demo code from the early notes is preserved at the git tag
 [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).
