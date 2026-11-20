@@ -26,6 +26,9 @@ Read the notes in order. Each note builds on the previous one.
 | 13 | [Bean scopes (all six)](13-bean-scopes.md) | singleton, prototype, request, session, application, websocket; prototype-in-singleton trap and fixes; scoped proxies; custom scopes | ✅ singleton; others 🧪 |
 | 14 | [Eager & lazy instantiation](14-eager-and-lazy-instantiation.md) | Default eager singletons, `@Lazy` placements, eager-needs-lazy trap, injection-point proxies, fail-fast trade-off, global lazy init | ✅ eager; `@Lazy` 🧪 |
 | 15 | [`@SpringBootApplication`, Spring Boot setup, health endpoint](15-spring-boot-application-and-health.md) | What `@SpringBootApplication` is made of, auto-configuration, Boot 4 starters, Actuator health/liveness/readiness, tests | ✅ Applied |
+| 16 | [`@RestController` (= `@Controller` + `@ResponseBody`)](16-rest-controller.md) | View names vs response body, message converters + Jackson 3, `ResponseEntity`, status codes, RFC 9457 Problem Details | 🧪 demo; Problem Details ✅ |
+| 17 | [`@RequestMapping`, `@PathVariable`, `@RequestParam`, `@RequestHeader`, `@RequestBody`](17-request-mapping-and-binding.md) | Routing conditions (405/406/415), overlapping-route trap, type conversion, required/optional, lists/enums/dates, headers, JSON binding and Jackson 3 defaults | 🧪 Verified in a demo |
+| 18 | [API versioning](18-api-versioning.md) | FoodRush scenario, breaking vs non-breaking changes, 4 strategies with Spring 7 built-in versioning, deprecation/sunset headers, Job Finder decision | ✅ Path versioning applied + tested |
 
 **What's next:** see the [roadmap](roadmap.md) for planned topics, from Spring Core to the
 full Job Finder app.
@@ -72,3 +75,6 @@ Each note follows the same structure, so it's easy to come back and revise:
 | 2026-11-20 | Studied eager vs lazy instantiation (`@Lazy` placements, traps, fail-fast) | 14 |
 | 2026-11-20 | Singleton vs prototype in depth: per-injection instances, `destroyBean`, runtime args, singleton data-leak demo | 13 §10 |
 | 2026-11-20 | **Moved to Spring Boot 4.2.0**: `JobFinderApplication`, Actuator health with liveness/readiness probes, 5 HTTP tests. Spring Core demo code removed (kept at tag `spring-core-basics`) | 15 · banners in 00–04 |
+| 2026-11-20 | Studied `@RestController` with a verified scratch API. **Enabled RFC 9457 Problem Details** for all errors + test | 16 |
+| 2026-11-20 | Studied request mapping and binding annotations in depth (40+ verified requests, 3 traps root-caused) | 17 |
+| 2026-11-20 | Studied API versioning (all 4 strategies verified with Spring 7). **Applied path versioning `/api/v1`** + `ApiVersioningTests` (incl. Actuator not affected) | 18 |

@@ -41,8 +41,10 @@ The app follows the layered structure from [note 05](05-backend-layers.md) (🧪
 
 | Status | Topic | In Job Finder |
 |--------|-------|---------------|
-| 🔜 | REST APIs with Spring Web MVC: `@RestController`, DTOs, validation | `GET /jobs`, `POST /jobs` |
-| 🔜 | Exception handling: `@RestControllerAdvice`, problem details | Clean error responses |
+| 🧪 | REST APIs with Spring Web MVC: `@RestController`, DTOs, status codes ([note 16](16-rest-controller.md)), request binding ([note 17](17-request-mapping-and-binding.md)); validation 🔜 | `GET /jobs`, `POST /jobs` |
+| ✅ | API versioning: path `/api/v1` with Spring 7 built-in support, tested ([note 18](18-api-versioning.md)) | Safe evolution of the API |
+| ✅ | Problem Details (RFC 9457) error format enabled + tested ([note 16 §7](16-rest-controller.md)) | Standard error responses |
+| 🔜 | Exception handling: `@RestControllerAdvice` mapping domain exceptions to Problem Details | Clean error responses |
 | 🔜 | Database with Spring Data JPA + PostgreSQL | `Job`, `Company`, `Application` entities |
 | 🔜 | Schema migrations with Flyway | Versioned database changes |
 | 🔜 | Search, filtering, pagination | Search jobs by title, location, salary |

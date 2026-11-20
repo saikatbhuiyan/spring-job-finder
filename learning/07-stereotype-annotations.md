@@ -106,7 +106,9 @@ called `Beans`; see note 03 §9.)
 | `@RestController` | Web (REST APIs) | `@Controller` + `@ResponseBody`: return values are written **directly to the response as JSON** | `JobController` (`GET /jobs`) |
 | `@Configuration` | Configuration | Holds `@Bean` methods, CGLIB-enhanced for singleton semantics | `ProjectConfig` |
 
-### `@Controller` vs `@RestController` (🔜 with Spring Web)
+### `@Controller` vs `@RestController`
+
+> Now verified with a running app, including the `Circular view path` failure: [note 16](16-rest-controller.md).
 
 ```java
 @Controller
