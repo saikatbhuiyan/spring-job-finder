@@ -36,6 +36,7 @@ Read the notes in order. Each note builds on the previous one.
 | 23 | [Spring Data vs Spring Data JPA](23-spring-data-vs-spring-data-jpa.md) | The Spring Data umbrella (release train 2026.1.0), Commons repositories, JPA/Hibernate stack, same repository on JPA vs JDBC, dirty checking, production settings | 🧪 Verified in a demo |
 | 24 | [How Spring Data JPA and Hibernate are related](24-spring-data-jpa-and-hibernate.md) | Runtime trace: SimpleJpaRepository → EntityManager proxy → Hibernate SessionImpl → Hikari; save = persist/merge; who validates queries; who does what | 🧪 Verified in a demo |
 | 25 | [Important components of Spring Data JPA](25-spring-data-jpa-components.md) | Entities, repositories, derived/@Query/@Modifying, Page vs Slice, projections, N+1 + @EntityGraph, Specifications, auditing, @Version, transactions, config | 🧪 Verified in a demo |
+| 26 | [Important interfaces of Spring Data and Spring Data JPA](26-spring-data-interfaces.md) | Hierarchy and methods read from the jars, PagingAndSortingRepository ≠ CRUD, deprecations, @NoRepositoryBean, @RepositoryDefinition, keyset Window scrolling, Query by Example trap, getReferenceById, new Update/DeleteSpecification | 🧪 Verified in a demo |
 
 **What's next:** see the [roadmap](roadmap.md) for planned topics, from Spring Core to the
 full Job Finder app.
@@ -92,3 +93,4 @@ Each note follows the same structure, so it's easy to come back and revise:
 | 2026-11-20 | Studied Spring Data vs Spring Data JPA: identical repository run on JPA and JDBC, generated SQL compared, dirty checking verified | 23 |
 | 2026-11-20 | Traced Spring Data JPA → Hibernate at runtime (real classes behind proxies, persist vs merge SQL, startup query validation) | 24 |
 | 2026-11-20 | Studied Spring Data JPA components with real SQL: projections, Page vs Slice, N+1 (1+3) fixed by @EntityGraph, Specifications, auditing, optimistic locking | 25 |
+| 2026-11-21 | Studied Spring Data / JPA interfaces from the 4.2 jars; verified keyset scrolling, QBE primitive trap, Spring Data JPA 4 Update/DeleteSpecification | 26 |
