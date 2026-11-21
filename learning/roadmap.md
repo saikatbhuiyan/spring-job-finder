@@ -46,6 +46,8 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | ✅ | API versioning: path `/api/v1` with Spring 7 built-in support, tested ([note 18](18-api-versioning.md)) | Safe evolution of the API |
 | ✅ | Problem Details (RFC 9457) error format enabled + tested ([note 16 §7](16-rest-controller.md)) | Standard error responses |
 | 🔜 | Exception handling: `@RestControllerAdvice` mapping domain exceptions to Problem Details | Clean error responses |
+| 🧪 | JDBC fundamentals, connection pooling, `JdbcClient` ([note 22](22-working-with-a-database-in-java.md)) | Foundation for persistence |
+| 🧪 | Spring Data vs Spring Data JPA, repositories, derived queries, dirty checking ([note 23](23-spring-data-vs-spring-data-jpa.md)); Spring Data JPA ↔ Hibernate internals ([note 24](24-spring-data-jpa-and-hibernate.md)); components: projections, N+1, Specifications, auditing, `@Version` ([note 25](25-spring-data-jpa-components.md)) | Choosing the persistence approach |
 | 🔜 | Database with Spring Data JPA + PostgreSQL | `Job`, `Company`, `Application` entities |
 | 🔜 | Schema migrations with Flyway | Versioned database changes |
 | 🔜 | Search, filtering, pagination | Search jobs by title, location, salary |

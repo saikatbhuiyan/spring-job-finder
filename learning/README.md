@@ -32,6 +32,10 @@ Read the notes in order. Each note builds on the previous one.
 | 19 | [Clean architecture: structure, rules, enforcement](19-clean-architecture.md) | Dependency rule, layered vs hexagonal vs modular, Job Finder structure, Spring Modulith + ArchUnit rules, testing the rules, ADRs | ✅ Applied + enforced |
 | 20 | [Spring Boot logging: console patterns, profiles, structured JSON](20-spring-boot-logging.md) | SLF4J/Logback, levels, pattern conversion words, ECS/Logstash/GELF, MDC, dev/prod profiles, testing logging in a separate JVM | ✅ Applied + tested |
 | 21 | [Spring Boot DevTools](21-spring-boot-devtools.md) | Production-safe setup, 3 layers of protection, fast restart (two class loaders), Boot 4 changes (per-module defaults, LiveReload off), the test trap | ✅ Applied + guarded |
+| 22 | [Working with a database in Java (JDBC)](22-working-with-a-database-in-java.md) | The typical JDBC steps, SQL injection, transactions, connection leaks, pooling (HikariCP), Spring `JdbcClient`, the data-access ladder | 🧪 Verified in a demo |
+| 23 | [Spring Data vs Spring Data JPA](23-spring-data-vs-spring-data-jpa.md) | The Spring Data umbrella (release train 2026.1.0), Commons repositories, JPA/Hibernate stack, same repository on JPA vs JDBC, dirty checking, production settings | 🧪 Verified in a demo |
+| 24 | [How Spring Data JPA and Hibernate are related](24-spring-data-jpa-and-hibernate.md) | Runtime trace: SimpleJpaRepository → EntityManager proxy → Hibernate SessionImpl → Hikari; save = persist/merge; who validates queries; who does what | 🧪 Verified in a demo |
+| 25 | [Important components of Spring Data JPA](25-spring-data-jpa-components.md) | Entities, repositories, derived/@Query/@Modifying, Page vs Slice, projections, N+1 + @EntityGraph, Specifications, auditing, @Version, transactions, config | 🧪 Verified in a demo |
 
 **What's next:** see the [roadmap](roadmap.md) for planned topics, from Spring Core to the
 full Job Finder app.
@@ -84,3 +88,7 @@ Each note follows the same structure, so it's easy to come back and revise:
 | 2026-11-20 | **Adopted modular monolith + clean layers** (ADR 0001), enforced by Spring Modulith 2.2 + ArchUnit 1.5.1 with fixture-tested rules (28 tests). Added ADRs 0001–0003 | 19 |
 | 2026-11-20 | **Logging per environment:** `dev` profile (compact pattern, DEBUG, health details) via `spring-boot:run`, `prod` profile (ECS JSON). ADR 0004, `ProfileConfigurationTests` in a child JVM (30 tests) | 20 |
 | 2026-11-20 | **DevTools** added (runtime + optional). Verified: absent from the jar, inactive with `java -jar`, 0.172 s restart in dev. Fixed `ProfileConfigurationTests` so the prod check runs without DevTools (guard + mutation check) | 21 |
+| 2026-11-20 | Studied JDBC fundamentals with H2 + HikariCP + Spring JdbcClient (SQL injection, rollback, leaks, 11× pooling speed-up verified) | 22 |
+| 2026-11-20 | Studied Spring Data vs Spring Data JPA: identical repository run on JPA and JDBC, generated SQL compared, dirty checking verified | 23 |
+| 2026-11-20 | Traced Spring Data JPA → Hibernate at runtime (real classes behind proxies, persist vs merge SQL, startup query validation) | 24 |
+| 2026-11-20 | Studied Spring Data JPA components with real SQL: projections, Page vs Slice, N+1 (1+3) fixed by @EntityGraph, Specifications, auditing, optimistic locking | 25 |
