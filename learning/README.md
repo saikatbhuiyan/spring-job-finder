@@ -37,6 +37,7 @@ Read the notes in order. Each note builds on the previous one.
 | 24 | [How Spring Data JPA and Hibernate are related](24-spring-data-jpa-and-hibernate.md) | Runtime trace: SimpleJpaRepository → EntityManager proxy → Hibernate SessionImpl → Hikari; save = persist/merge; who validates queries; who does what | 🧪 Verified in a demo |
 | 25 | [Important components of Spring Data JPA](25-spring-data-jpa-components.md) | Entities, repositories, derived/@Query/@Modifying, Page vs Slice, projections, N+1 + @EntityGraph, Specifications, auditing, @Version, transactions, config | 🧪 Verified in a demo |
 | 26 | [Important interfaces of Spring Data and Spring Data JPA](26-spring-data-interfaces.md) | Hierarchy and methods read from the jars, PagingAndSortingRepository ≠ CRUD, deprecations, @NoRepositoryBean, @RepositoryDefinition, keyset Window scrolling, Query by Example trap, getReferenceById, new Update/DeleteSpecification | 🧪 Verified in a demo |
+| 27 | [Derived query methods](27-derived-query-methods.md) | Method-name grammar, every keyword with real SQL, nested properties, And/Or precedence, return types, null → IS NULL, derived delete N+1, startup validation | 🧪 Verified in a demo |
 
 **What's next:** see the [roadmap](roadmap.md) for planned topics, from Spring Core to the
 full Job Finder app.
@@ -94,3 +95,4 @@ Each note follows the same structure, so it's easy to come back and revise:
 | 2026-11-20 | Traced Spring Data JPA → Hibernate at runtime (real classes behind proxies, persist vs merge SQL, startup query validation) | 24 |
 | 2026-11-20 | Studied Spring Data JPA components with real SQL: projections, Page vs Slice, N+1 (1+3) fixed by @EntityGraph, Specifications, auditing, optimistic locking | 25 |
 | 2026-11-21 | Studied Spring Data / JPA interfaces from the 4.2 jars; verified keyset scrolling, QBE primitive trap, Spring Data JPA 4 Update/DeleteSpecification | 26 |
+| 2026-11-21 | Studied derived query methods: 25+ methods with real SQL; traps verified (null → IS NULL, (A and B) or C, derived delete = SELECT + N DELETEs) | 27 |
