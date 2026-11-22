@@ -42,11 +42,11 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | Status | Topic | In Job Finder |
 |--------|-------|---------------|
 | ✅ | Architecture: modular monolith + clean layers, enforced by Spring Modulith + ArchUnit ([note 19](19-clean-architecture.md), [ADR 0001](../docs/adr/0001-modular-clean-architecture.md)) | Every feature module |
-| 🧪 | REST APIs with Spring Web MVC: `@RestController`, DTOs, status codes ([note 16](16-rest-controller.md)), request binding ([note 17](17-request-mapping-and-binding.md)); validation 🔜 | `GET /jobs`, `POST /jobs` |
+| 🧪 | REST APIs with Spring Web MVC: `@RestController`, DTOs, status codes ([note 16](16-rest-controller.md)), request binding ([note 17](17-request-mapping-and-binding.md)); validation errors ✅ ([note 31](31-global-exception-handling.md)) | `GET /jobs`, `POST /jobs` |
 | ✅ | API versioning: path `/api/v1` with Spring 7 built-in support, tested ([note 18](18-api-versioning.md)) | Safe evolution of the API |
 | ✅ | Problem Details (RFC 9457) error format enabled + tested ([note 16 §7](16-rest-controller.md)) | Standard error responses |
 | ✅ | DTO pattern: records at the API boundary, endpoints never expose domain types (ArchUnit), unknown JSON properties rejected ([note 30](30-dto-pattern.md), [ADR 0005](../docs/adr/0005-dtos-at-the-api-boundary.md)) | Every endpoint |
-| 🔜 | Exception handling: `@RestControllerAdvice` mapping domain exceptions to Problem Details, field-level validation errors, Problem Details for unhandled 500s (gap found in [note 30 §11](30-dto-pattern.md)) | Clean error responses |
+| ✅ | Exception handling: `@RestControllerAdvice` + Problem Details `ErrorController`, sealed domain exceptions, field-level validation errors, safe 500s ([note 31](31-global-exception-handling.md), [ADR 0006](../docs/adr/0006-global-exception-handling.md)) | Clean error responses |
 | 🧪 | JDBC fundamentals, connection pooling, `JdbcClient` ([note 22](22-working-with-a-database-in-java.md)) | Foundation for persistence |
 | 🧪 | Spring Data vs Spring Data JPA, repositories, derived queries, dirty checking ([note 23](23-spring-data-vs-spring-data-jpa.md)); Spring Data JPA ↔ Hibernate internals ([note 24](24-spring-data-jpa-and-hibernate.md)); components: projections, N+1, Specifications, auditing, `@Version` ([note 25](25-spring-data-jpa-components.md)); interfaces, keyset scrolling ([note 26](26-spring-data-interfaces.md)); derived query methods ([note 27](27-derived-query-methods.md)); `@Query` JPQL/native, `@Modifying` ([note 28](28-query-annotation.md)); Lombok and entity boilerplate ([note 29](29-lombok.md)) | Choosing the persistence approach |
 | 🔜 | Database with Spring Data JPA + PostgreSQL | `Job`, `Company`, `Application` entities |
