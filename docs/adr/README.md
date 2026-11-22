@@ -10,3 +10,4 @@ A new decision gets the next number. A changed decision gets a new ADR that supe
 | [0002](0002-api-versioning-via-uri-path.md) | API versioning via the URI path (`/api/v1`) | Accepted |
 | [0003](0003-problem-details-for-errors.md) | RFC 9457 Problem Details for all API errors | Accepted |
 | [0004](0004-logging-per-environment.md) | Human-readable logs in dev, ECS JSON logs in prod | Accepted |
+| [0005](0005-dtos-at-the-api-boundary.md) | DTOs at the API boundary; endpoints never expose domain types | Accepted |

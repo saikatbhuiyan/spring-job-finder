@@ -13,4 +13,8 @@ public class JobService {
     public Job get(long id) {
         return repository.findById(id).orElseThrow();
     }
+
+    public Job post(String title) {
+        return new Job(0, title);
+    }
 }

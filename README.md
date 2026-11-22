@@ -46,6 +46,8 @@ API conventions:
 
 - **Versioning:** URI path (`/api/v1/...`) using Spring Framework 7's built-in API versioning.
 - **Errors:** RFC 9457 Problem Details (`application/problem+json`).
+- **DTOs:** endpoints accept and return records, never entities. Unknown request properties are
+  rejected with `400` ([ADR 0005](docs/adr/0005-dtos-at-the-api-boundary.md)).
 - **Logging:** SLF4J. Readable in `dev`, structured ECS JSON in `prod` ([ADR 0004](docs/adr/0004-logging-per-environment.md)).
 
 Build and run the executable jar (production style):
@@ -58,11 +60,11 @@ SPRING_PROFILES_ACTIVE=prod java -jar target/job-finder-0.0.1-SNAPSHOT.jar   # E
 | Profile | Logs | Health details | Activated by |
 |---------|------|----------------|--------------|
 | `dev` | Compact colored lines, app at DEBUG | Shown | `mvn spring-boot:run` |
+| `prod` | Structured **ECS JSON** to stdout | Hidden | `SPRING_PROFILES_ACTIVE=prod` |
+| *(none)* | Spring Boot default pattern | Hidden | Default |
 
 DevTools (fast restart) is development-only: it's excluded from the packaged jar, and a test
 fails if it's ever active in a production-like launch.
-| `prod` | Structured **ECS JSON** to stdout | Hidden | `SPRING_PROFILES_ACTIVE=prod` |
-| *(none)* | Spring Boot default pattern | Hidden | Default |
 
 Run the tests: `mvn test`
 
@@ -91,6 +93,7 @@ The architecture is **enforced in the build**: `mvn test` fails if a rule is bro
   - dependencies point inwards
   - the domain has no HTTP dependencies
   - controllers live only in `api` and never use repositories directly
+  - endpoints accept and return DTOs, never domain types (generics included)
   - constructor injection only
   - no `System.out`
 - **The rules are themselves tested** against deliberately violating fixtures, so a rule can't
@@ -104,13 +107,14 @@ Key decisions are recorded as [Architecture Decision Records](docs/adr/README.md
 src/main/java/com/shahabuddin/jobfinder/
 └── JobFinderApplication.java      # @SpringBootApplication entry point
 src/main/resources/
-├── application.properties         # shared: Actuator, Problem Details, API versioning
+├── application.properties         # shared: Actuator, Problem Details, API versioning, strict JSON
 ├── application-dev.properties     # dev: readable logs, DEBUG, health details
 └── application-prod.properties    # prod: ECS JSON logs
 src/test/java/com/shahabuddin/jobfinder/
 ├── HealthEndpointTests.java       # starts the app, calls the endpoints over HTTP
 ├── ErrorResponseTests.java        # locks in the Problem Details error format
 ├── ApiVersioningTests.java        # locks in /api/v1 versioning (Actuator unaffected)
+├── RequestBodyBindingTests.java   # records bind; unknown JSON properties are rejected
 ├── ProfileConfigurationTests.java # starts the real app per profile in a child JVM (without DevTools)
 └── architecture/                  # architecture rules (ArchUnit + Spring Modulith) and their tests
 docs/adr/                          # Architecture Decision Records
@@ -119,7 +123,7 @@ learning/                          # step-by-step notes (see below)
 
 ## Learning notes
 
-The [`learning/`](learning/README.md) folder is a step-by-step journal (30 notes so far). Each
+The [`learning/`](learning/README.md) folder is a step-by-step journal (31 notes so far). Each
 note explains a concept from scratch, shows the code, includes **real output from running
 experiments**, and ends with common mistakes and interview questions.
 
@@ -131,7 +135,7 @@ autowiring, circular dependencies, programmatic bean registration (Spring 7
 `@SpringBootApplication` with Actuator health checks, `@RestController` / REST API design, request mapping and binding, API versioning, clean architecture
 enforced with Spring Modulith and ArchUnit, per-environment logging with structured JSON, DevTools, JDBC fundamentals, Spring Data vs Spring Data JPA, how Spring Data JPA relates to Hibernate, and the
 important Spring Data JPA components (projections, N+1, Specifications, auditing, optimistic locking) and interfaces
-(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), and Lombok (with its JPA traps).
+(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), and the DTO pattern.
 
 The original plain-Spring demo code from the early notes is preserved at the git tag
 [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).

@@ -29,6 +29,7 @@ class ArchitectureRulesTests {
                 Arguments.of("layer dependencies", ArchitectureRules.LAYER_DEPENDENCIES, "Job"),
                 Arguments.of("domain is web-agnostic", ArchitectureRules.DOMAIN_IS_WEB_AGNOSTIC, "WebAwareJob"),
                 Arguments.of("api does not use repositories", ArchitectureRules.API_DOES_NOT_USE_REPOSITORIES, "ShortcutController"),
+                Arguments.of("endpoints do not expose domain types", ArchitectureRules.ENDPOINTS_DO_NOT_EXPOSE_DOMAIN_TYPES, "LeakyController"),
                 Arguments.of("controllers live in api", ArchitectureRules.CONTROLLERS_LIVE_IN_API, "MisplacedController"),
                 Arguments.of("no field injection", ArchitectureRules.NO_FIELD_INJECTION, "FieldInjectedService"),
                 Arguments.of("no standard streams", ArchitectureRules.NO_STANDARD_STREAMS, "ConsolePrinter"),
@@ -41,6 +42,15 @@ class ArchitectureRulesTests {
         assertThatThrownBy(() -> rule.check(VIOLATIONS))
                 .isInstanceOf(AssertionError.class)
                 .hasMessageContaining(offendingClass);
+    }
+
+    @Test
+    void domainTypesAreCaughtInReturnTypesGenericsAndRequestBodies() {
+        assertThatThrownBy(() -> ArchitectureRules.ENDPOINTS_DO_NOT_EXPOSE_DOMAIN_TYPES.check(VIOLATIONS))
+                .hasMessageContaining("LeakyController.get() exposes domain type archfixture.violations.job.domain.Job")
+                .hasMessageContaining("LeakyController.list() exposes domain type archfixture.violations.job.domain.Job")
+                .hasMessageContaining("LeakyController.create(archfixture.violations.job.domain.Job) exposes domain type")
+                .hasMessageContaining("(3 times)");
     }
 
     @Test

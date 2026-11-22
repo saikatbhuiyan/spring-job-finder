@@ -1,11 +1,23 @@
 package com.shahabuddin.jobfinder.architecture;
 
+import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.lang.ConditionEvents;
+import com.tngtech.archunit.lang.SimpleConditionEvent;
 import com.tngtech.archunit.library.GeneralCodingRules;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.stream.Stream;
+
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
+import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
@@ -63,6 +75,36 @@ public final class ArchitectureRules {
             .should().dependOnClassesThat().haveSimpleNameEndingWith("Repository")
             .allowEmptyShould(true)
             .because("controllers must call use cases in the application layer, not repositories");
+
+    /**
+     * Endpoints speak DTOs, never domain types (see docs/adr/0005-dtos-at-the-api-boundary.md).
+     * Checks the parameters and return type of every request-mapped method, including generic
+     * type arguments ({@code ResponseEntity<List<Job>>} exposes {@code Job}). Private mapping
+     * helpers in a controller may still take domain types; only the HTTP contract is checked.
+     */
+    public static final ArchRule ENDPOINTS_DO_NOT_EXPOSE_DOMAIN_TYPES = methods()
+            .that().areDeclaredInClassesThat(annotatedWith(RestController.class).or(annotatedWith(Controller.class)))
+            .and().areMetaAnnotatedWith(RequestMapping.class)
+            .should(notHaveDomainTypesInSignature())
+            .allowEmptyShould(true)
+            .because("entities in an API leak internal fields, allow overposting and break on lazy loading");
+
+    private static ArchCondition<JavaMethod> notHaveDomainTypesInSignature() {
+        DescribedPredicate<JavaClass> inDomain = resideInAPackage(DOMAIN);
+        return new ArchCondition<>("not accept or return domain types") {
+            @Override
+            public void check(JavaMethod method, ConditionEvents events) {
+                Stream.concat(
+                                method.getReturnType().getAllInvolvedRawTypes().stream(),
+                                method.getParameterTypes().stream()
+                                        .flatMap(type -> type.getAllInvolvedRawTypes().stream()))
+                        .filter(inDomain)
+                        .distinct()
+                        .forEach(type -> events.add(SimpleConditionEvent.violated(method,
+                                method.getFullName() + " exposes domain type " + type.getName())));
+            }
+        };
+    }
 
     /** HTTP endpoints live only in the api layer. */
     public static final ArchRule CONTROLLERS_LIVE_IN_API = classes()

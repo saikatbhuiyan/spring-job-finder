@@ -22,6 +22,9 @@ class ArchitectureTests {
     static final ArchRule apiDoesNotUseRepositories = ArchitectureRules.API_DOES_NOT_USE_REPOSITORIES;
 
     @ArchTest
+    static final ArchRule endpointsDoNotExposeDomainTypes = ArchitectureRules.ENDPOINTS_DO_NOT_EXPOSE_DOMAIN_TYPES;
+
+    @ArchTest
     static final ArchRule controllersLiveInApi = ArchitectureRules.CONTROLLERS_LIVE_IN_API;
 
     @ArchTest
