@@ -40,6 +40,7 @@ Read the notes in order. Each note builds on the previous one.
 | 27 | [Derived query methods](27-derived-query-methods.md) | Method-name grammar, every keyword with real SQL, nested properties, And/Or precedence, return types, null → IS NULL, derived delete N+1, startup validation | 🧪 Verified in a demo |
 | 28 | [`@Query` annotation](28-query-annotation.md) | JPQL vs native, parameters, `join fetch`, DTO/interface projections, paging + countQuery, safe sorting, LIKE escaping, `@Modifying` bulk updates (stale context, skipped `@Version`) | 🧪 Verified in a demo |
 | 29 | [Lombok](29-lombok.md) | How it works (compile-time AST), JDK 23+ processor setup, every annotation, Spring `@Qualifier` trap, `@Builder.Default`, `@Data` on entities (StackOverflow, lazy loading, HashSet), safe entity template, records vs `@Value`, `lombok.config` bans, decision for Job Finder | 🧪 Verified in a demo |
+| 30 | [DTO pattern](30-dto-pattern.md) | Why entities in an API fail (lazy 500, truncated 200 from recursion, leaks, overposting, coupling), request vs response records, layer placement, mapping (manual vs MapStruct), validation, unknown properties, paged responses | ✅ Applied (ArchUnit rule, strict JSON binding, ADR 0005) |
 
 **What's next:** see the [roadmap](roadmap.md) for planned topics, from Spring Core to the
 full Job Finder app.
@@ -100,3 +101,4 @@ Each note follows the same structure, so it's easy to come back and revise:
 | 2026-11-21 | Studied derived query methods: 25+ methods with real SQL; traps verified (null → IS NULL, (A and B) or C, derived delete = SELECT + N DELETEs) | 27 |
 | 2026-11-22 | Studied `@Query`: JPQL/native/projections/paging/sorting with real SQL; traps verified (collection fetch + Page counts wrong total, `%:kw%` not escaped, native SQL not validated at startup, bulk update leaves stale entities and skips `@Version`) | 28 |
 | 2026-11-22 | Studied Lombok on JDK 25: silent no-op without `annotationProcessorPaths`, `@Qualifier` not copied, `@Builder` default lost, `@Data` entity failures, proxy-unsafe `equals`; decided records-first, Lombok not added yet | 29 |
+| 2026-11-22 | Applied the DTO pattern: reproduced 5 entity-exposure failures over HTTP; added ArchUnit rule (endpoints never expose domain types, generics included), strict unknown-property rejection, ADR 0005; found 500s bypass Problem Details | 30 |
