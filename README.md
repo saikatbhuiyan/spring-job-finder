@@ -119,7 +119,7 @@ learning/                          # step-by-step notes (see below)
 
 ## Learning notes
 
-The [`learning/`](learning/README.md) folder is a step-by-step journal (28 notes so far). Each
+The [`learning/`](learning/README.md) folder is a step-by-step journal (29 notes so far). Each
 note explains a concept from scratch, shows the code, includes **real output from running
 experiments**, and ends with common mistakes and interview questions.
 
@@ -131,7 +131,7 @@ autowiring, circular dependencies, programmatic bean registration (Spring 7
 `@SpringBootApplication` with Actuator health checks, `@RestController` / REST API design, request mapping and binding, API versioning, clean architecture
 enforced with Spring Modulith and ArchUnit, per-environment logging with structured JSON, DevTools, JDBC fundamentals, Spring Data vs Spring Data JPA, how Spring Data JPA relates to Hibernate, and the
 important Spring Data JPA components (projections, N+1, Specifications, auditing, optimistic locking) and interfaces
-(repository hierarchy, keyset scrolling), and derived query methods.
+(repository hierarchy, keyset scrolling), derived query methods, and `@Query` (JPQL, native, bulk updates).
 
 The original plain-Spring demo code from the early notes is preserved at the git tag
 [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).

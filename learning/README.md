@@ -38,6 +38,7 @@ Read the notes in order. Each note builds on the previous one.
 | 25 | [Important components of Spring Data JPA](25-spring-data-jpa-components.md) | Entities, repositories, derived/@Query/@Modifying, Page vs Slice, projections, N+1 + @EntityGraph, Specifications, auditing, @Version, transactions, config | 🧪 Verified in a demo |
 | 26 | [Important interfaces of Spring Data and Spring Data JPA](26-spring-data-interfaces.md) | Hierarchy and methods read from the jars, PagingAndSortingRepository ≠ CRUD, deprecations, @NoRepositoryBean, @RepositoryDefinition, keyset Window scrolling, Query by Example trap, getReferenceById, new Update/DeleteSpecification | 🧪 Verified in a demo |
 | 27 | [Derived query methods](27-derived-query-methods.md) | Method-name grammar, every keyword with real SQL, nested properties, And/Or precedence, return types, null → IS NULL, derived delete N+1, startup validation | 🧪 Verified in a demo |
+| 28 | [`@Query` annotation](28-query-annotation.md) | JPQL vs native, parameters, `join fetch`, DTO/interface projections, paging + countQuery, safe sorting, LIKE escaping, `@Modifying` bulk updates (stale context, skipped `@Version`) | 🧪 Verified in a demo |
 
 **What's next:** see the [roadmap](roadmap.md) for planned topics, from Spring Core to the
 full Job Finder app.
@@ -96,3 +97,4 @@ Each note follows the same structure, so it's easy to come back and revise:
 | 2026-11-20 | Studied Spring Data JPA components with real SQL: projections, Page vs Slice, N+1 (1+3) fixed by @EntityGraph, Specifications, auditing, optimistic locking | 25 |
 | 2026-11-21 | Studied Spring Data / JPA interfaces from the 4.2 jars; verified keyset scrolling, QBE primitive trap, Spring Data JPA 4 Update/DeleteSpecification | 26 |
 | 2026-11-21 | Studied derived query methods: 25+ methods with real SQL; traps verified (null → IS NULL, (A and B) or C, derived delete = SELECT + N DELETEs) | 27 |
+| 2026-11-22 | Studied `@Query`: JPQL/native/projections/paging/sorting with real SQL; traps verified (collection fetch + Page counts wrong total, `%:kw%` not escaped, native SQL not validated at startup, bulk update leaves stale entities and skips `@Version`) | 28 |
