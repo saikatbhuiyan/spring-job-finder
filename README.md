@@ -13,7 +13,7 @@ documented and verified in the [`learning/`](learning/README.md) notes.
 | | Current | Planned |
 |-|---------|---------|
 | Language | Java 25 | |
-| Framework | Spring Boot 4.2 (Spring Framework 7.1), Spring MVC, Actuator | Spring Data JPA, Spring Security |
+| Framework | Spring Boot 4.2 (Spring Framework 7.1), Spring MVC, Bean Validation, Actuator | Spring Data JPA, Spring Security |
 | Build | Maven | |
 | Database | | PostgreSQL + Flyway |
 | Testing | JUnit 6, `@SpringBootTest` + `RestTestClient`, ArchUnit, Spring Modulith | Testcontainers |
@@ -45,7 +45,9 @@ curl localhost:8080/actuator/health
 API conventions:
 
 - **Versioning:** URI path (`/api/v1/...`) using Spring Framework 7's built-in API versioning.
-- **Errors:** RFC 9457 Problem Details (`application/problem+json`).
+- **Errors:** RFC 9457 Problem Details (`application/problem+json`) for **every** error, including
+  field-level validation errors and errors raised in filters. A 500 never reveals internals. Error types
+  are documented in [`docs/problems.md`](docs/problems.md) ([ADR 0006](docs/adr/0006-global-exception-handling.md)).
 - **DTOs:** endpoints accept and return records, never entities. Unknown request properties are
   rejected with `400` ([ADR 0005](docs/adr/0005-dtos-at-the-api-boundary.md)).
 - **Logging:** SLF4J. Readable in `dev`, structured ECS JSON in `prod` ([ADR 0004](docs/adr/0004-logging-per-environment.md)).
@@ -105,9 +107,12 @@ Key decisions are recorded as [Architecture Decision Records](docs/adr/README.md
 
 ```text
 src/main/java/com/shahabuddin/jobfinder/
-└── JobFinderApplication.java      # @SpringBootApplication entry point
+├── JobFinderApplication.java      # @SpringBootApplication entry point
+└── shared/                        # shared kernel module
+    ├── DomainException.java       # sealed: ResourceNotFoundException (404), ConflictException (409)
+    └── api/                       # GlobalExceptionHandler, ProblemDetailsErrorController (/error)
 src/main/resources/
-├── application.properties         # shared: Actuator, Problem Details, API versioning, strict JSON
+├── application.properties         # shared: Actuator, API versioning, strict JSON
 ├── application-dev.properties     # dev: readable logs, DEBUG, health details
 └── application-prod.properties    # prod: ECS JSON logs
 src/test/java/com/shahabuddin/jobfinder/
@@ -116,14 +121,16 @@ src/test/java/com/shahabuddin/jobfinder/
 ├── ApiVersioningTests.java        # locks in /api/v1 versioning (Actuator unaffected)
 ├── RequestBodyBindingTests.java   # records bind; unknown JSON properties are rejected
 ├── ProfileConfigurationTests.java # starts the real app per profile in a child JVM (without DevTools)
+├── shared/api/GlobalExceptionHandlingTests.java  # every error path over HTTP, incl. filters and log capture
 └── architecture/                  # architecture rules (ArchUnit + Spring Modulith) and their tests
 docs/adr/                          # Architecture Decision Records
+docs/problems.md                   # catalogue of the API's Problem Details types
 learning/                          # step-by-step notes (see below)
 ```
 
 ## Learning notes
 
-The [`learning/`](learning/README.md) folder is a step-by-step journal (31 notes so far). Each
+The [`learning/`](learning/README.md) folder is a step-by-step journal (32 notes so far). Each
 note explains a concept from scratch, shows the code, includes **real output from running
 experiments**, and ends with common mistakes and interview questions.
 
@@ -135,7 +142,7 @@ autowiring, circular dependencies, programmatic bean registration (Spring 7
 `@SpringBootApplication` with Actuator health checks, `@RestController` / REST API design, request mapping and binding, API versioning, clean architecture
 enforced with Spring Modulith and ArchUnit, per-environment logging with structured JSON, DevTools, JDBC fundamentals, Spring Data vs Spring Data JPA, how Spring Data JPA relates to Hibernate, and the
 important Spring Data JPA components (projections, N+1, Specifications, auditing, optimistic locking) and interfaces
-(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), and the DTO pattern.
+(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), the DTO pattern, and global exception handling.
 
 The original plain-Spring demo code from the early notes is preserved at the git tag
 [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).

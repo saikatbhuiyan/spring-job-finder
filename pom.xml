@@ -44,6 +44,12 @@
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
 
+        <!-- Bean Validation (Hibernate Validator) for request DTOs: @Valid, @NotBlank, @Positive... -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
         <!-- Production-ready endpoints: /actuator/health, metrics, info... -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
