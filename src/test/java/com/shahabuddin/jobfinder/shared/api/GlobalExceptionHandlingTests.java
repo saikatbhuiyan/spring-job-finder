@@ -2,6 +2,7 @@ package com.shahabuddin.jobfinder.shared.api;
 
 import com.shahabuddin.jobfinder.shared.ConflictException;
 import com.shahabuddin.jobfinder.shared.ResourceNotFoundException;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,17 +14,21 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webmvc.error.ErrorController;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.client.RestTestClient;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,9 +40,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.io.IOException;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * Locks in the error contract of docs/adr/0006-global-exception-handling.md over real HTTP: every
@@ -45,7 +58,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * parameter, domain exceptions map to 404/409, and a 500 never reveals the exception message
  * (which is logged instead). Uses endpoints and a filter that exist only in this test.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        // Makes Spring's (otherwise silent) disconnected-client handling observable in one test.
+        properties = {
+                "logging.level.org.springframework.web.servlet.handler.DisconnectedClient=debug",
+                "logging.level.org.springframework.web.servlet.mvc.method.annotation.DisconnectedClient=debug"})
 @AutoConfigureRestTestClient
 @ExtendWith(OutputCaptureExtension.class)
 class GlobalExceptionHandlingTests {
@@ -59,6 +76,15 @@ class GlobalExceptionHandlingTests {
     @Autowired
     private ApplicationContext context;
 
+    @Autowired
+    private MeterRegistry meters;
+
+    @Autowired
+    private ErrorProbeController probe;
+
+    @LocalServerPort
+    private int port;
+
     @Test
     void exactlyOneExceptionHandlerAndErrorControllerAreActive() {
         // Ours replace Boot's ProblemDetailsExceptionHandler and BasicErrorController.
@@ -66,6 +92,10 @@ class GlobalExceptionHandlingTests {
                 .singleElement().isInstanceOf(GlobalExceptionHandler.class);
         assertThat(context.getBeansOfType(ErrorController.class).values())
                 .singleElement().isInstanceOf(ProblemDetailsErrorController.class);
+        // ...and it is the only advice, ours or a library's: a second one would be shadowed by
+        // (or shadow) the Exception catch-all, depending on bean order.
+        assertThat(context.getBeansWithAnnotation(ControllerAdvice.class).values())
+                .singleElement().isInstanceOf(GlobalExceptionHandler.class);
     }
 
     // --- 500: unexpected exceptions ------------------------------------------------------------
@@ -84,9 +114,102 @@ class GlobalExceptionHandlingTests {
                 .consumeWith(result -> assertThat(new String(result.getResponseBodyContent())).doesNotContain("hunter2"));
 
         // ...but operators get the full story in the log, exactly once.
-        assertThat(output).contains("Unhandled exception on GET /api/v1/error-probe/boom")
+        assertThat(output).contains("GET /api/v1/error-probe/boom failed with 500")
                 .contains("at com.shahabuddin.jobfinder.shared.api.GlobalExceptionHandlingTests$ErrorProbeController.boom");
         assertThat(occurrences(output.getAll(), "java.lang.IllegalStateException: " + SECRET)).isOne();
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource({
+            "response that can't be serialized, /api/v1/error-probe/unwritable,                  HttpMessageNotWritableException",
+            "misnamed @PathVariable,            /api/v1/error-probe/misnamed-path-variable/7,    MissingPathVariableException"})
+    void serverErrorsFromSpringsOwnHandlingAreLoggedAndGeneric(String name, String path, String exception, CapturedOutput output) {
+        // Spring's inherited handlers answer these with a 500, but logged nothing and named
+        // internals in the detail ("Required path variable 'jobId' is not present.").
+        client.get().uri(path)
+                .exchange()
+                .expectStatus().isEqualTo(500)
+                .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON)
+                .expectBody()
+                .jsonPath("$.detail").isEqualTo("An unexpected error occurred.")
+                .jsonPath("$.instance").isEqualTo(path)
+                .consumeWith(result -> assertThat(new String(result.getResponseBodyContent()))
+                        .doesNotContain("hunter2").doesNotContain("jobId"));
+
+        assertThat(output).contains("GET " + path + " failed with 500").contains(exception);
+        assertThat(occurrences(output.getAll(), " ERROR ")).isOne();
+    }
+
+    @Test
+    void failureAfterTheResponseWasCommittedIsLoggedAsAnError(CapturedOutput output) {
+        // Serialization fails after the first buffer of a large body was sent: the 200 status is
+        // already on the wire, so no error response is possible. It must not be a quiet WARN.
+        client.get().uri("/api/v1/error-probe/fails-mid-stream")
+                .exchange()
+                .expectStatus().isOk();
+
+        assertThat(output)
+                .contains("GET /api/v1/error-probe/fails-mid-stream failed after the response was committed")
+                .contains("java.lang.IllegalStateException: getter " + SECRET)
+                .doesNotContain("Response already committed. Ignoring");
+        assertThat(occurrences(output.getAll(), " ERROR ")).isOne();
+
+        // Metrics can't show a 500 (the client did get a 200), but must not show a clean success.
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
+                assertThat(meters.find("http.server.requests").tags(
+                        "uri", "/api/{version}/error-probe/fails-mid-stream", "status", "200",
+                        "exception", "HttpMessageNotWritableException").timer()).isNotNull());
+    }
+
+    @Test
+    void clientThatDisconnectsWhileTheResponseIsWrittenIsNotAnError(CapturedOutput output) throws Exception {
+        // Raw socket: a client that sends a request and goes away (closed tab, lost network).
+        try (Socket socket = new Socket("localhost", port)) {
+            socket.getOutputStream().write(
+                    "GET /api/v1/error-probe/slow-large HTTP/1.1\r\nHost: localhost\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
+            socket.getOutputStream().flush();
+            assertThat(probe.slowLargeStarted.await(5, TimeUnit.SECONDS)).isTrue();
+            socket.setSoLinger(true, 0); // close with a TCP reset
+        }
+        probe.clientGone.countDown();
+
+        // Spring's own disconnected-client line (DEBUG, enabled for this test class)...
+        await().atMost(Duration.ofSeconds(10))
+                .untilAsserted(() -> assertThat(output).contains("Looks like the client has gone away"));
+        // ...and nothing that would page someone.
+        assertThat(output.getAll()).doesNotContain(" ERROR ").doesNotContain(" WARN ");
+    }
+
+    @Test
+    void serverErrorsAreRecordedInMetricsButExpectedOutcomesAreNot() {
+        // Handled exceptions still reach http.server.requests (and traces) when the status is 5xx:
+        // Spring records them after the @ExceptionHandler ran. A 404 is an expected outcome.
+        client.get().uri("/api/v1/error-probe/boom").exchange().expectStatus().isEqualTo(500);
+        client.get().uri("/api/v1/error-probe/jobs/42").exchange().expectStatus().isNotFound();
+
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            assertThat(meters.find("http.server.requests").tags(
+                    "uri", "/api/{version}/error-probe/boom", "status", "500",
+                    "outcome", "SERVER_ERROR", "exception", "IllegalStateException").timer()).isNotNull();
+            assertThat(meters.find("http.server.requests").tags(
+                    "uri", "/api/{version}/error-probe/jobs/{id}", "status", "404", "exception", "none").timer()).isNotNull();
+        });
+    }
+
+    @Test
+    void validationMessagesAreEnglishWhateverTheAcceptLanguage() {
+        // By default Bean Validation follows Accept-Language: "darf nicht leer sein" inside an
+        // otherwise English problem. The locale is fixed to English (application.properties).
+        client.post().uri("/api/v1/error-probe/jobs")
+                .header("Accept-Language", "de-DE")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"title": "", "salary": 1, "company": {"name": "Acme"}}""")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.errors[0].pointer").isEqualTo("#/title")
+                .jsonPath("$.errors[0].detail").isEqualTo("must not be blank");
     }
 
     // --- Domain exceptions ---------------------------------------------------------------------
@@ -304,9 +427,42 @@ class GlobalExceptionHandlingTests {
     @RequestMapping("/api/{version}/error-probe")
     static class ErrorProbeController {
 
+        final CountDownLatch slowLargeStarted = new CountDownLatch(1);
+        final CountDownLatch clientGone = new CountDownLatch(1);
+
         @GetMapping(path = "/boom", version = "1")
         String boom() {
             throw new IllegalStateException(SECRET);
+        }
+
+        @GetMapping(path = "/unwritable", version = "1")
+        Unwritable unwritable() {
+            return new Unwritable();
+        }
+
+        @GetMapping(path = "/misnamed-path-variable/{id}", version = "1")
+        String misnamedPathVariable(@PathVariable("jobId") String id) {
+            return id;
+        }
+
+        /** Large enough to commit the response (several output buffers) before serialization fails. */
+        @GetMapping(path = "/fails-mid-stream", version = "1")
+        List<Object> failsMidStream() {
+            List<Object> rows = new ArrayList<>(largeBody());
+            rows.add(new Unwritable());
+            return rows;
+        }
+
+        /** Waits until the test's client has disconnected, then writes a large body. */
+        @GetMapping(path = "/slow-large", version = "1")
+        List<String> slowLarge() throws InterruptedException {
+            slowLargeStarted.countDown();
+            clientGone.await(5, TimeUnit.SECONDS);
+            return largeBody();
+        }
+
+        private static List<String> largeBody() {
+            return IntStream.range(0, 100_000).mapToObj(i -> "row-" + i + "-padding-padding-padding").toList();
         }
 
         @GetMapping(path = "/jobs/{id}", version = "1")
@@ -337,5 +493,12 @@ class GlobalExceptionHandlingTests {
     }
 
     record ProbeCompany(@NotBlank String name) {
+    }
+
+    /** A response Jackson can't write: the getter throws (a bug in our response code). */
+    public static class Unwritable {
+        public String getTitle() {
+            throw new IllegalStateException("getter " + SECRET);
+        }
     }
 }

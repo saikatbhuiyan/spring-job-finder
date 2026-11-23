@@ -9,6 +9,7 @@ import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import com.tngtech.archunit.library.GeneralCodingRules;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -113,6 +114,19 @@ public final class ArchitectureRules {
             .should().resideInAPackage(API)
             .allowEmptyShould(true)
             .because("controllers are the HTTP adapter of a module");
+
+    /**
+     * One global exception handler, in the shared kernel's api package. Spring asks
+     * {@code @ControllerAdvice} beans in order and takes the first one that has <b>any</b>
+     * matching handler, so the global handler's {@code Exception} catch-all would silently shadow
+     * a module's own advice (verified: the module's handler never ran, the client got a 500).
+     */
+    public static final ArchRule CONTROLLER_ADVICE_ONLY_IN_SHARED_API = classes()
+            .that().areMetaAnnotatedWith(ControllerAdvice.class)
+            .should().resideInAPackage("..shared.api..")
+            .allowEmptyShould(true)
+            .because("a module's own advice would be shadowed by the global handler; modules throw "
+                    + "DomainException subtypes instead (docs/adr/0006)");
 
     /** Constructor injection only (immutable, testable beans; see note 08). */
     public static final ArchRule NO_FIELD_INJECTION =

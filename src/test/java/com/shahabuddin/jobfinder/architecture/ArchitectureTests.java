@@ -28,6 +28,9 @@ class ArchitectureTests {
     static final ArchRule controllersLiveInApi = ArchitectureRules.CONTROLLERS_LIVE_IN_API;
 
     @ArchTest
+    static final ArchRule controllerAdviceOnlyInSharedApi = ArchitectureRules.CONTROLLER_ADVICE_ONLY_IN_SHARED_API;
+
+    @ArchTest
     static final ArchRule noFieldInjection = ArchitectureRules.NO_FIELD_INJECTION;
 
     @ArchTest

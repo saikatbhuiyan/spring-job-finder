@@ -77,6 +77,13 @@
             <artifactId>spring-boot-starter-actuator-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Waiting for asynchronous outcomes in tests (log lines, metrics) without fixed sleeps.
+             Used directly, so declared directly (not relied on transitively); version managed by Boot. -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Architecture enforcement: module boundaries (Spring Modulith) and
              layer rules inside modules (ArchUnit). See docs/adr/0001. -->

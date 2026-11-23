@@ -46,8 +46,10 @@ API conventions:
 
 - **Versioning:** URI path (`/api/v1/...`) using Spring Framework 7's built-in API versioning.
 - **Errors:** RFC 9457 Problem Details (`application/problem+json`) for **every** error, including
-  field-level validation errors and errors raised in filters. A 500 never reveals internals. Error types
-  are documented in [`docs/problems.md`](docs/problems.md) ([ADR 0006](docs/adr/0006-global-exception-handling.md)).
+  field-level validation errors and errors raised in filters. Every 5xx is logged once with its stack
+  trace and never reveals internals; error text is always English. Error types are documented in
+  [`docs/problems.md`](docs/problems.md) ([ADR 0006](docs/adr/0006-global-exception-handling.md),
+  [ADR 0008](docs/adr/0008-exception-handling-hardening.md)).
 - **DTOs:** endpoints accept and return records, never entities. Unknown request properties are
   rejected with `400` ([ADR 0005](docs/adr/0005-dtos-at-the-api-boundary.md)).
 - **CORS:** browser origins are an explicit per-environment allowlist (`JOBFINDER_CORS_ALLOWEDORIGINS`),
@@ -136,7 +138,7 @@ learning/                          # step-by-step notes (see below)
 
 ## Learning notes
 
-The [`learning/`](learning/README.md) folder is a step-by-step journal (33 notes so far). Each
+The [`learning/`](learning/README.md) folder is a step-by-step journal (34 notes so far). Each
 note explains a concept from scratch, shows the code, includes **real output from running
 experiments**, and ends with common mistakes and interview questions.
 
@@ -148,7 +150,7 @@ autowiring, circular dependencies, programmatic bean registration (Spring 7
 `@SpringBootApplication` with Actuator health checks, `@RestController` / REST API design, request mapping and binding, API versioning, clean architecture
 enforced with Spring Modulith and ArchUnit, per-environment logging with structured JSON, DevTools, JDBC fundamentals, Spring Data vs Spring Data JPA, how Spring Data JPA relates to Hibernate, and the
 important Spring Data JPA components (projections, N+1, Specifications, auditing, optimistic locking) and interfaces
-(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), the DTO pattern, global exception handling, and CORS.
+(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), the DTO pattern, global exception handling (and its production edge cases), and CORS.
 
 The original plain-Spring demo code from the early notes is preserved at the git tag
 [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).

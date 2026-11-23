@@ -4,6 +4,7 @@ import com.shahabuddin.jobfinder.shared.ConflictException;
 import com.shahabuddin.jobfinder.shared.DomainException;
 import com.shahabuddin.jobfinder.shared.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.validation.method.ParameterErrors;
 import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -29,6 +31,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+import org.springframework.web.filter.ServerHttpObservationFilter;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import tools.jackson.core.JacksonException;
@@ -50,14 +54,21 @@ import java.util.List;
  *       <b>which</b> field or parameter is wrong.</li>
  *   <li>{@link DomainException}s thrown by use cases map to 404 / 409 with their (client-safe)
  *       message.</li>
- *   <li>Anything else is a bug or an infrastructure failure: logged with its stack trace, answered
- *       with a generic 500 that never reveals the exception message.</li>
+ *   <li>Anything else is a bug or an infrastructure failure. <b>Every</b> 5xx, including those of
+ *       the inherited handling, is logged once with its stack trace and answered with a generic
+ *       body that never reveals the cause ({@link #handleExceptionInternal}).</li>
+ *   <li>A client that disconnected while the response was being written is not an error.</li>
  * </ul>
  *
  * Extending {@code ResponseEntityExceptionHandler} also replaces Spring Boot's own
  * {@code ProblemDetailsExceptionHandler} (it backs off when such a bean exists), so there is exactly
- * one handler. Errors raised outside Spring MVC (filters, the servlet container) never reach this
- * class; {@link ProblemDetailsErrorController} covers those.
+ * one handler. It must stay the <b>only</b> {@code @ControllerAdvice}: Spring asks advice beans in
+ * order and uses the first one with any matching handler, so this class's {@code Exception}
+ * catch-all would shadow a module's own advice (enforced by {@code ArchitectureRules}). Modules
+ * report business failures as {@link DomainException}s instead.
+ *
+ * <p>Errors raised outside Spring MVC (filters, the servlet container) never reach this class;
+ * {@link ProblemDetailsErrorController} covers those.
  */
 @RestControllerAdvice
 class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -85,10 +96,65 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     // --- Everything else: bugs and infrastructure failures ------------------------------------
 
     @ExceptionHandler(Exception.class)
-    ResponseEntity<Object> handleUnexpected(Exception ex, HttpServletRequest servletRequest, WebRequest request) {
-        log.error("Unhandled exception on {} {}", servletRequest.getMethod(), servletRequest.getRequestURI(), ex);
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, UNEXPECTED_ERROR_DETAIL);
-        return handleExceptionInternal(ex, problem, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
+    @Nullable ResponseEntity<Object> handleUnexpected(Exception ex, WebRequest request) {
+        return handleExceptionInternal(ex, null, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
+    }
+
+    /**
+     * The single exit of this class: every handler, our own and the inherited Spring MVC ones,
+     * ends here. That makes it the one place to enforce the 5xx policy: some inherited handlers
+     * (an unwritable response, a misnamed {@code @PathVariable}...) answer 500 without logging
+     * anything and with a detail that names internals.
+     */
+    @Override
+    protected @Nullable ResponseEntity<Object> handleExceptionInternal(
+            Exception ex, @Nullable Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+        if (statusCode.is5xxServerError()) {
+            return serverError(ex, headers, statusCode, request);
+        }
+        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+    }
+
+    /**
+     * A 5xx is our fault: log it once, with the stack trace, and tell the client nothing about the
+     * cause. If the response was already committed (a failure halfway through writing a large
+     * body), no error response can be sent any more; the client gets an incomplete body.
+     */
+    private @Nullable ResponseEntity<Object> serverError(
+            Exception ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        HttpServletRequest servletRequest = ((ServletWebRequest) request).getRequest();
+        HttpServletResponse servletResponse = ((ServletWebRequest) request).getResponse();
+        if (servletResponse != null && servletResponse.isCommitted()) {
+            log.error("{} {} failed after the response was committed; the client received an incomplete response",
+                    servletRequest.getMethod(), servletRequest.getRequestURI(), ex);
+            // The status on the wire stays 200, and Spring only records handled exceptions for a
+            // 5xx status. Record it ourselves, or metrics and traces would show a success.
+            ServerHttpObservationFilter.recordHandledException(servletRequest, ex);
+            return null;
+        }
+        log.error("{} {} failed with {}", servletRequest.getMethod(), servletRequest.getRequestURI(), status.value(), ex);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, UNEXPECTED_ERROR_DETAIL);
+        return super.handleExceptionInternal(ex, problem, headers, status, request);
+    }
+
+    /**
+     * Writing the response failed. When that is because the client disconnected (closed the tab,
+     * lost the network), it is routine, not a server error: hand it to Spring's own handling for
+     * disconnected clients (one DEBUG line, logger {@code ...DisconnectedClient}, nothing sent).
+     *
+     * <p>Detected only by Spring's {@link AsyncRequestNotUsableException}, raised by its response
+     * wrapper when the client connection is unusable. Spring's broader
+     * {@code DisconnectedClientHelper} is deliberately not used for this: it treats any
+     * {@code EOFException} in the cause chain as a disconnect, so a real failure could be hidden.
+     */
+    @Override
+    protected @Nullable ResponseEntity<Object> handleHttpMessageNotWritable(
+            HttpMessageNotWritableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        AsyncRequestNotUsableException clientGone = findCause(ex, AsyncRequestNotUsableException.class);
+        if (clientGone != null) {
+            return handleAsyncRequestNotUsableException(clientGone, request);
+        }
+        return super.handleHttpMessageNotWritable(ex, headers, status, request);
     }
 
     /**
@@ -126,9 +192,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HandlerMethodValidationException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         if (ex.isForReturnValue()) {
             // Our own response violated its constraints: a server bug, not the client's fault.
-            log.error("Response validation failed", ex);
-            ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, UNEXPECTED_ERROR_DETAIL);
-            return handleExceptionInternal(ex, problem, headers, HttpStatus.INTERNAL_SERVER_ERROR, request);
+            return handleExceptionInternal(ex, null, headers, HttpStatus.INTERNAL_SERVER_ERROR, request);
         }
         List<Violation> violations = new ArrayList<>();
         ex.visitResults(new HandlerMethodValidationException.Visitor() {
