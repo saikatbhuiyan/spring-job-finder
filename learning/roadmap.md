@@ -35,6 +35,7 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | ✅ | Profiles `dev` / `prod` (`application-{profile}.properties`): [note 20 §6](20-spring-boot-logging.md) |
 | ✅ | Logging: console patterns, structured ECS JSON in prod: [note 20](20-spring-boot-logging.md) |
 | ✅ | DevTools: fast restart in dev, proven absent from the jar: [note 21](21-spring-boot-devtools.md) |
+| ✅ | CORS: per-environment origin allowlist, `CorsFilter`, startup validation ([note 32](32-cors.md), [ADR 0007](../docs/adr/0007-cors-policy.md)) |
 | 🔜 | Request/correlation ID filter (MDC) |
 
 ## Phase 3: Building Job Finder
