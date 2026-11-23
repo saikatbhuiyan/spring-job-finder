@@ -50,6 +50,8 @@ API conventions:
   are documented in [`docs/problems.md`](docs/problems.md) ([ADR 0006](docs/adr/0006-global-exception-handling.md)).
 - **DTOs:** endpoints accept and return records, never entities. Unknown request properties are
   rejected with `400` ([ADR 0005](docs/adr/0005-dtos-at-the-api-boundary.md)).
+- **CORS:** browser origins are an explicit per-environment allowlist (`JOBFINDER_CORS_ALLOWEDORIGINS`),
+  none by default, validated at startup ([ADR 0007](docs/adr/0007-cors-policy.md)).
 - **Logging:** SLF4J. Readable in `dev`, structured ECS JSON in `prod` ([ADR 0004](docs/adr/0004-logging-per-environment.md)).
 
 Build and run the executable jar (production style):
@@ -57,6 +59,9 @@ Build and run the executable jar (production style):
 ```bash
 mvn clean package
 SPRING_PROFILES_ACTIVE=prod java -jar target/job-finder-0.0.1-SNAPSHOT.jar   # ECS JSON logs
+
+# allow a browser frontend on another origin (none by default)
+JOBFINDER_CORS_ALLOWEDORIGINS=https://app.example.com SPRING_PROFILES_ACTIVE=prod java -jar target/job-finder-0.0.1-SNAPSHOT.jar
 ```
 
 | Profile | Logs | Health details | Activated by |
@@ -110,10 +115,10 @@ src/main/java/com/shahabuddin/jobfinder/
 ├── JobFinderApplication.java      # @SpringBootApplication entry point
 └── shared/                        # shared kernel module
     ├── DomainException.java       # sealed: ResourceNotFoundException (404), ConflictException (409)
-    └── api/                       # GlobalExceptionHandler, ProblemDetailsErrorController (/error)
+    └── api/                       # GlobalExceptionHandler, ProblemDetailsErrorController (/error), CorsConfig
 src/main/resources/
-├── application.properties         # shared: Actuator, API versioning, strict JSON
-├── application-dev.properties     # dev: readable logs, DEBUG, health details
+├── application.properties         # shared: Actuator, API versioning, strict JSON, CORS (none)
+├── application-dev.properties     # dev: readable logs, DEBUG, health details, CORS for localhost frontends
 └── application-prod.properties    # prod: ECS JSON logs
 src/test/java/com/shahabuddin/jobfinder/
 ├── HealthEndpointTests.java       # starts the app, calls the endpoints over HTTP
@@ -122,6 +127,7 @@ src/test/java/com/shahabuddin/jobfinder/
 ├── RequestBodyBindingTests.java   # records bind; unknown JSON properties are rejected
 ├── ProfileConfigurationTests.java # starts the real app per profile in a child JVM (without DevTools)
 ├── shared/api/GlobalExceptionHandlingTests.java  # every error path over HTTP, incl. filters and log capture
+├── shared/api/CorsTests.java     # CORS with browser headers (preflight, errors, filter 401); CorsPropertiesTests
 └── architecture/                  # architecture rules (ArchUnit + Spring Modulith) and their tests
 docs/adr/                          # Architecture Decision Records
 docs/problems.md                   # catalogue of the API's Problem Details types
@@ -130,7 +136,7 @@ learning/                          # step-by-step notes (see below)
 
 ## Learning notes
 
-The [`learning/`](learning/README.md) folder is a step-by-step journal (32 notes so far). Each
+The [`learning/`](learning/README.md) folder is a step-by-step journal (33 notes so far). Each
 note explains a concept from scratch, shows the code, includes **real output from running
 experiments**, and ends with common mistakes and interview questions.
 
@@ -142,7 +148,7 @@ autowiring, circular dependencies, programmatic bean registration (Spring 7
 `@SpringBootApplication` with Actuator health checks, `@RestController` / REST API design, request mapping and binding, API versioning, clean architecture
 enforced with Spring Modulith and ArchUnit, per-environment logging with structured JSON, DevTools, JDBC fundamentals, Spring Data vs Spring Data JPA, how Spring Data JPA relates to Hibernate, and the
 important Spring Data JPA components (projections, N+1, Specifications, auditing, optimistic locking) and interfaces
-(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), the DTO pattern, and global exception handling.
+(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), the DTO pattern, global exception handling, and CORS.
 
 The original plain-Spring demo code from the early notes is preserved at the git tag
 [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).

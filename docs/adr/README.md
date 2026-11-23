@@ -12,3 +12,4 @@ A new decision gets the next number. A changed decision gets a new ADR that supe
 | [0004](0004-logging-per-environment.md) | Human-readable logs in dev, ECS JSON logs in prod | Accepted |
 | [0005](0005-dtos-at-the-api-boundary.md) | DTOs at the API boundary; endpoints never expose domain types | Accepted |
 | [0006](0006-global-exception-handling.md) | Global exception handling: `@RestControllerAdvice` + error controller, field-level validation errors, sealed domain exceptions | Accepted |
+| [0007](0007-cors-policy.md) | CORS: per-environment origin allowlist (default none), validated at startup, applied by a filter to `/api/**` | Accepted |
