@@ -43,7 +43,7 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | Status | Topic | In Job Finder |
 |--------|-------|---------------|
 | ✅ | Architecture: modular monolith + clean layers, enforced by Spring Modulith + ArchUnit ([note 19](19-clean-architecture.md), [ADR 0001](../docs/adr/0001-modular-clean-architecture.md)) | Every feature module |
-| 🧪 | REST APIs with Spring Web MVC: `@RestController`, DTOs, status codes ([note 16](16-rest-controller.md)), request binding ([note 17](17-request-mapping-and-binding.md)); validation errors ✅ ([note 31](31-global-exception-handling.md)) | `GET /jobs`, `POST /jobs` |
+| 🧪 | REST APIs with Spring Web MVC: `@RestController`, DTOs, status codes ([note 16](16-rest-controller.md)), request binding ([note 17](17-request-mapping-and-binding.md)); request validation ✅ ([note 34](34-validation.md)), validation errors ✅ ([note 31](31-global-exception-handling.md)) | `GET /jobs`, `POST /jobs` |
 | ✅ | API versioning: path `/api/v1` with Spring 7 built-in support, tested ([note 18](18-api-versioning.md)) | Safe evolution of the API |
 | ✅ | Problem Details (RFC 9457) error format enabled + tested ([note 16 §7](16-rest-controller.md)) | Standard error responses |
 | ✅ | DTO pattern: records at the API boundary, endpoints never expose domain types (ArchUnit), unknown JSON properties rejected ([note 30](30-dto-pattern.md), [ADR 0005](../docs/adr/0005-dtos-at-the-api-boundary.md)) | Every endpoint |
