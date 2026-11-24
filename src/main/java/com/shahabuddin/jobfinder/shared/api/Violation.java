@@ -22,6 +22,8 @@ record Violation(String pointer, String parameter, String code, String detail) {
 
     /** A body property the request type doesn't declare. */
     static final String UNKNOWN_PROPERTY = "UnknownProperty";
+    /** A query parameter the endpoint doesn't declare. */
+    static final String UNKNOWN_PARAMETER = "UnknownParameter";
     /** A value of the wrong JSON type or format (e.g. a string for a number, 2.5 for an integer). */
     static final String INVALID_TYPE = "InvalidType";
     /** A value that has the right type but that the request type rejected while being created. */

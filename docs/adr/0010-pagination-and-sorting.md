@@ -1,6 +1,6 @@
 # ADR 0010: Pagination and sorting
 
-- **Status:** Accepted
+- **Status:** Accepted; extended by [ADR 0011](0011-filtering-and-search.md)
 - **Date:** 2026-11-24
 - **Implements:** [ADR 0005](0005-dtos-at-the-api-boundary.md) decision 7. **Extends:**
   [ADR 0009](0009-request-validation.md)

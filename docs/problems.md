@@ -58,6 +58,7 @@ Codes:
 |--------|---------|
 | A constraint name: `NotNull`, `NotBlank`, `Size`, `Positive`, `Max`, `Email`, ... or one defined by the API | The value breaks that rule. See the endpoint's documentation for the limits |
 | `UnknownProperty` | The body contains a property the endpoint doesn't accept |
+| `UnknownParameter` | The query string contains a parameter the endpoint doesn't accept (often a typo in a filter name) |
 | `InvalidType` | The value has the wrong JSON type or format: a string for a number, `2.5` for an integer, a number for a string, an unknown enum value. Values are never converted |
 | `InvalidValue` | The value has the right type but was rejected as a whole |
 | `Required` | A required parameter or header is missing |

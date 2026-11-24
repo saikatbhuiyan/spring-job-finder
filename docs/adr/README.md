@@ -14,5 +14,6 @@ A new decision gets the next number. A changed decision gets a new ADR that supe
 | [0006](0006-global-exception-handling.md) | Global exception handling: `@RestControllerAdvice` + error controller, field-level validation errors, sealed domain exceptions | Accepted (extended by 0008, 0009) |
 | [0007](0007-cors-policy.md) | CORS: per-environment origin allowlist (default none), validated at startup, applied by a filter to `/api/**` | Accepted |
 | [0008](0008-exception-handling-hardening.md) | Exception handling hardening: one 5xx policy for every handler, quiet client disconnects, exactly one `@ControllerAdvice`, fixed English locale | Accepted (extended by 0009) |
-| [0009](0009-request-validation.md) | Request validation: violation codes, one format for bodies/parameters/headers, strict JSON types, DTO conventions enforced by ArchUnit | Accepted (extended by 0010) |
-| [0010](0010-pagination-and-sorting.md) | Pagination and sorting: validated `PageQuery` contract, per-endpoint sort allowlist, `id` tiebreaker, offset limit, `PagedModel` responses | Accepted |
+| [0009](0009-request-validation.md) | Request validation: violation codes, one format for bodies/parameters/headers, strict JSON types, DTO conventions enforced by ArchUnit | Accepted (extended by 0010, 0011) |
+| [0010](0010-pagination-and-sorting.md) | Pagination and sorting: validated `PageQuery` contract, per-endpoint sort allowlist, `id` tiebreaker, offset limit, `PagedModel` responses | Accepted (extended by 0011) |
+| [0011](0011-filtering-and-search.md) | Filtering and search: unknown query parameters rejected, ISO dates, filter records, normalized `q`; Specifications, `EXISTS` for collections, PostgreSQL full-text search | Accepted |
