@@ -36,6 +36,7 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | ✅ | Logging: console patterns, structured ECS JSON in prod: [note 20](20-spring-boot-logging.md) |
 | ✅ | DevTools: fast restart in dev, proven absent from the jar: [note 21](21-spring-boot-devtools.md) |
 | ✅ | CORS: per-environment origin allowlist, `CorsFilter`, startup validation ([note 32](32-cors.md), [ADR 0007](../docs/adr/0007-cors-policy.md)) |
+| ✅ | Rate limiting: Bucket4j token bucket per client, `429` + `Retry-After`, proxy-safe client identity ([note 37](37-rate-limiting.md), [ADR 0012](../docs/adr/0012-rate-limiting.md)); Redis-backed when there's more than one instance 🔜 |
 | 🔜 | Request/correlation ID filter (MDC) |
 
 ## Phase 3: Building Job Finder
