@@ -40,10 +40,10 @@ class CorsConfig {
 
     /**
      * Response headers the frontend may read. Browsers hide everything else: {@code Location} of a
-     * {@code 201}, and the API version retirement headers {@code Deprecation}, {@code Sunset} and
-     * {@code Link} (ADR 0002).
+     * {@code 201}, the API version retirement headers {@code Deprecation}, {@code Sunset} and
+     * {@code Link} (ADR 0002), and {@code Retry-After} of a {@code 429} (ADR 0012).
      */
-    static final List<String> EXPOSED_HEADERS = List.of("Location", "Deprecation", "Sunset", "Link");
+    static final List<String> EXPOSED_HEADERS = List.of("Location", "Deprecation", "Sunset", "Link", "Retry-After");
 
     private static final Logger log = LoggerFactory.getLogger(CorsConfig.class);
 

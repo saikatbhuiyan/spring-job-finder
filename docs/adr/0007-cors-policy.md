@@ -1,6 +1,6 @@
 # ADR 0007: CORS policy for the REST API
 
-- **Status:** Accepted
+- **Status:** Accepted; extended by [ADR 0012](0012-rate-limiting.md) (`Retry-After` exposed)
 - **Date:** 2026-11-22
 
 ## Context

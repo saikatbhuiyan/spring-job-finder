@@ -96,7 +96,7 @@ class CorsTests {
                 .exchange()
                 .expectStatus().isCreated()
                 .expectHeader().valueEquals("Access-Control-Allow-Origin", FRONTEND)
-                .expectHeader().valueEquals("Access-Control-Expose-Headers", "Location, Deprecation, Sunset, Link")
+                .expectHeader().valueEquals("Access-Control-Expose-Headers", "Location, Deprecation, Sunset, Link, Retry-After")
                 .expectHeader().exists("Location")
                 .expectHeader().values("Vary", vary -> assertThat(vary).contains("Origin"));
         assertThat(probe.posts).hasValue(1);

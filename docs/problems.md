@@ -23,6 +23,9 @@ Every error response of the Job Finder API is an [RFC 9457](https://www.rfc-edit
 
 A `500` never contains internal details: `"detail": "An unexpected error occurred."`.
 
+A `429 Too Many Requests` (rate limit exceeded) carries a `Retry-After` header: the number of seconds to
+wait before retrying.
+
 The types defined by this API are listed below. Their URIs are part of the API contract and never change.
 
 ## validation-error

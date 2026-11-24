@@ -21,6 +21,9 @@
     <properties>
         <java.version>25</java.version>
         <spring-modulith.version>2.2.0</spring-modulith.version>
+        <!-- Not the newest release (8.23.0, published 2 days before it was evaluated): a release
+             gets a few weeks in the wild before it's adopted here. -->
+        <bucket4j.version>8.22.0</bucket4j.version>
         <archunit.version>1.5.1</archunit.version>
     </properties>
 
@@ -56,6 +59,19 @@
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-commons</artifactId>
+        </dependency>
+
+        <!-- Rate limiting (ADR 0012): Bucket4j's token bucket, lock-free and with nanosecond refill
+             precision; the same library has Redis backends for when the API runs on several
+             instances. Per-client buckets live in a bounded Caffeine cache (version managed by Boot). -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j_jdk17-core</artifactId>
+            <version>${bucket4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
         </dependency>
 
         <!-- Production-ready endpoints: /actuator/health, metrics, info... -->

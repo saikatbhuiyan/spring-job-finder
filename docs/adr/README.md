@@ -12,8 +12,9 @@ A new decision gets the next number. A changed decision gets a new ADR that supe
 | [0004](0004-logging-per-environment.md) | Human-readable logs in dev, ECS JSON logs in prod | Accepted |
 | [0005](0005-dtos-at-the-api-boundary.md) | DTOs at the API boundary; endpoints never expose domain types | Accepted (decisions 7, 8 implemented by 0010, 0009) |
 | [0006](0006-global-exception-handling.md) | Global exception handling: `@RestControllerAdvice` + error controller, field-level validation errors, sealed domain exceptions | Accepted (extended by 0008, 0009) |
-| [0007](0007-cors-policy.md) | CORS: per-environment origin allowlist (default none), validated at startup, applied by a filter to `/api/**` | Accepted |
+| [0007](0007-cors-policy.md) | CORS: per-environment origin allowlist (default none), validated at startup, applied by a filter to `/api/**` | Accepted (extended by 0012) |
 | [0008](0008-exception-handling-hardening.md) | Exception handling hardening: one 5xx policy for every handler, quiet client disconnects, exactly one `@ControllerAdvice`, fixed English locale | Accepted (extended by 0009) |
 | [0009](0009-request-validation.md) | Request validation: violation codes, one format for bodies/parameters/headers, strict JSON types, DTO conventions enforced by ArchUnit | Accepted (extended by 0010, 0011) |
 | [0010](0010-pagination-and-sorting.md) | Pagination and sorting: validated `PageQuery` contract, per-endpoint sort allowlist, `id` tiebreaker, offset limit, `PagedModel` responses | Accepted (extended by 0011) |
 | [0011](0011-filtering-and-search.md) | Filtering and search: unknown query parameters rejected, ISO dates, filter records, normalized `q`; Specifications, `EXISTS` for collections, PostgreSQL full-text search | Accepted |
+| [0012](0012-rate-limiting.md) | Rate limiting: Bucket4j token bucket per client address on `/api/**`, bounded memory, `429` + `Retry-After`, proxy-safe client identity; Redis + fail-open for several instances | Accepted |
