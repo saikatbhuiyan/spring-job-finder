@@ -1,6 +1,6 @@
 # ADR 0006: Global exception handling with Problem Details
 
-- **Status:** Accepted; extended by [ADR 0008](0008-exception-handling-hardening.md)
+- **Status:** Accepted; extended by [ADR 0008](0008-exception-handling-hardening.md) and [ADR 0009](0009-request-validation.md)
 - **Date:** 2026-11-22
 - **Implements and extends:** [ADR 0003](0003-problem-details-for-errors.md)
 

@@ -30,6 +30,7 @@ class ArchitectureRulesTests {
                 Arguments.of("domain is web-agnostic", ArchitectureRules.DOMAIN_IS_WEB_AGNOSTIC, "WebAwareJob"),
                 Arguments.of("api does not use repositories", ArchitectureRules.API_DOES_NOT_USE_REPOSITORIES, "ShortcutController"),
                 Arguments.of("endpoints do not expose domain types", ArchitectureRules.ENDPOINTS_DO_NOT_EXPOSE_DOMAIN_TYPES, "LeakyController"),
+                Arguments.of("request bodies are validated", ArchitectureRules.REQUEST_BODIES_ARE_VALIDATED, "UnvalidatedController"),
                 Arguments.of("controllers live in api", ArchitectureRules.CONTROLLERS_LIVE_IN_API, "MisplacedController"),
                 Arguments.of("controller advice only in shared api", ArchitectureRules.CONTROLLER_ADVICE_ONLY_IN_SHARED_API, "JobExceptionHandler"),
                 Arguments.of("no field injection", ArchitectureRules.NO_FIELD_INJECTION, "FieldInjectedService"),
@@ -52,6 +53,16 @@ class ArchitectureRulesTests {
                 .hasMessageContaining("LeakyController.list() exposes domain type archfixture.violations.job.domain.Job")
                 .hasMessageContaining("LeakyController.create(archfixture.violations.job.domain.Job) exposes domain type")
                 .hasMessageContaining("(3 times)");
+    }
+
+    @Test
+    void missingValidNestedTypesAndPrimitivesInRequestBodiesAreCaught() {
+        String body = "archfixture.violations.job.api.UnvalidatedController$ApplicationRequest";
+        assertThatThrownBy(() -> ArchitectureRules.REQUEST_BODIES_ARE_VALIDATED.check(VIOLATIONS))
+                .hasMessageContaining("UnvalidatedController.apply(" + body + ") does not validate its @RequestBody")
+                .hasMessageContaining(body + ".yearsOfExperience is primitive int")
+                .hasMessageContaining(body + ".address is not validated")
+                .hasMessageContaining(body + ".previous is not validated");
     }
 
     @Test

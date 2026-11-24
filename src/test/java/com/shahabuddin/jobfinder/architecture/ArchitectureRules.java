@@ -2,17 +2,26 @@ package com.shahabuddin.jobfinder.architecture;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaField;
 import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.core.domain.JavaModifier;
+import com.tngtech.archunit.core.domain.JavaParameter;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import com.tngtech.archunit.library.GeneralCodingRules;
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
@@ -105,6 +114,82 @@ public final class ArchitectureRules {
                                 method.getFullName() + " exposes domain type " + type.getName())));
             }
         };
+    }
+
+    /**
+     * Request bodies are validated completely (see docs/adr/0009-request-validation.md). Each of these
+     * mistakes compiles, starts and silently accepts invalid input (all verified):
+     * <ul>
+     *   <li>a {@code @RequestBody} without {@code @Valid}: no constraint is checked at all;</li>
+     *   <li>a nested object or collection of objects without {@code @Valid}: its constraints are
+     *       skipped. Put {@code @Valid} on the property itself ({@code @Valid List<Item> items}),
+     *       which also cascades into the elements;</li>
+     *   <li>a primitive property ({@code int}): a missing value can't be reported together with
+     *       the other errors. Use a wrapper type with {@code @NotNull}.</li>
+     * </ul>
+     * Nested types are followed recursively; JDK and library types and enums are not inspected.
+     */
+    public static final ArchRule REQUEST_BODIES_ARE_VALIDATED = methods()
+            .that().areDeclaredInClassesThat(annotatedWith(RestController.class).or(annotatedWith(Controller.class)))
+            .and().areMetaAnnotatedWith(RequestMapping.class)
+            .should(validateTheirRequestBodiesCompletely())
+            .allowEmptyShould(true)
+            .because("a missing @Valid or a primitive property silently accepts invalid input");
+
+    private static ArchCondition<JavaMethod> validateTheirRequestBodiesCompletely() {
+        return new ArchCondition<>("validate their request bodies completely") {
+            @Override
+            public void check(JavaMethod method, ConditionEvents events) {
+                for (JavaParameter parameter : method.getParameters()) {
+                    if (!parameter.isAnnotatedWith(RequestBody.class)) {
+                        continue;
+                    }
+                    if (!isCascaded(parameter)) {
+                        events.add(SimpleConditionEvent.violated(method, method.getFullName()
+                                + " does not validate its @RequestBody (add @Valid)"));
+                    }
+                    Set<JavaClass> visited = new HashSet<>();
+                    parameter.getType().getAllInvolvedRawTypes().stream()
+                            .filter(ArchitectureRules::isApplicationType)
+                            .forEach(type -> checkRequestType(type, visited, events));
+                }
+            }
+        };
+    }
+
+    private static void checkRequestType(JavaClass type, Set<JavaClass> visited, ConditionEvents events) {
+        if (!visited.add(type)) {
+            return;
+        }
+        for (JavaField field : type.getFields()) {
+            if (field.getModifiers().contains(JavaModifier.STATIC)) {
+                continue;
+            }
+            if (field.getRawType().isPrimitive()) {
+                events.add(SimpleConditionEvent.violated(field, field.getFullName() + " is primitive "
+                        + field.getRawType().getName() + " (use a wrapper type with @NotNull)"));
+            }
+            List<JavaClass> nested = field.getType().getAllInvolvedRawTypes().stream()
+                    .filter(ArchitectureRules::isApplicationType)
+                    .toList();
+            if (!nested.isEmpty() && !field.isAnnotatedWith(Valid.class)) {
+                events.add(SimpleConditionEvent.violated(field, field.getFullName()
+                        + " is not validated (add @Valid to cascade into it)"));
+            }
+            nested.forEach(nestedType -> checkRequestType(nestedType, visited, events));
+        }
+    }
+
+    private static boolean isCascaded(JavaParameter parameter) {
+        return parameter.isAnnotatedWith(Valid.class) || parameter.isAnnotatedWith(Validated.class);
+    }
+
+    /** A type declared by the application (not the JDK or a library) that can carry constraints. */
+    private static boolean isApplicationType(JavaClass type) {
+        String name = type.getName();
+        return !type.isPrimitive() && !type.isEnum() && !type.isArray()
+                && Stream.of("java.", "javax.", "jakarta.", "org.springframework.", "tools.jackson.", "com.fasterxml.")
+                .noneMatch(name::startsWith);
     }
 
     /** HTTP endpoints live only in the api layer. */

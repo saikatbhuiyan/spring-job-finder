@@ -38,9 +38,9 @@ lists **every** violation, sorted by location:
   "detail": "The request contains invalid fields or parameters.",
   "instance": "/api/v1/jobs",
   "errors": [
-    { "pointer": "#/company/name", "detail": "must not be blank" },
-    { "pointer": "#/salary", "detail": "must be greater than 0" },
-    { "pointer": "#/tags/1", "detail": "must not be blank" }
+    { "pointer": "#/company/name", "code": "NotBlank", "detail": "must not be blank" },
+    { "pointer": "#/salary", "code": "Positive", "detail": "must be greater than 0" },
+    { "parameter": "page_size", "code": "InvalidType", "detail": "has an invalid value or type" }
   ]
 }
 ```
@@ -48,11 +48,21 @@ lists **every** violation, sorted by location:
 | Entry | Meaning |
 |-------|---------|
 | `pointer` | A [JSON Pointer](https://www.rfc-editor.org/rfc/rfc6901) (as a URI fragment) to the field in the request body. `#` is the body as a whole |
-| `parameter` | The name of a query, path or header parameter (e.g. `page_size`), used instead of `pointer` |
-| `detail` | What's wrong with it |
+| `parameter` | The name of a query, path or header parameter (e.g. `page_size`, `Idempotency-Key`), used instead of `pointer` |
+| `code` | What kind of violation it is. **Stable: branch on or translate this**, not `detail` |
+| `detail` | What's wrong with it, in English, for developers |
 
-Also used when the body contains a property the API doesn't accept (`"is not a known property"`) or a
-value of the wrong type (`"has an invalid value or type"`). Rejected values are never echoed back.
+Codes:
+
+| `code` | Meaning |
+|--------|---------|
+| A constraint name: `NotNull`, `NotBlank`, `Size`, `Positive`, `Max`, `Email`, ... or one defined by the API | The value breaks that rule. See the endpoint's documentation for the limits |
+| `UnknownProperty` | The body contains a property the endpoint doesn't accept |
+| `InvalidType` | The value has the wrong JSON type or format: a string for a number, `2.5` for an integer, a number for a string, an unknown enum value. Values are never converted |
+| `InvalidValue` | The value has the right type but was rejected as a whole |
+| `Required` | A required parameter or header is missing |
+
+Rejected values are never echoed back.
 
 ## malformed-request-body
 

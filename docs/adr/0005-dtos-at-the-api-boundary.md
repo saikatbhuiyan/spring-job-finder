@@ -1,6 +1,6 @@
 # ADR 0005: DTOs at the API boundary; endpoints never expose domain types
 
-- **Status:** Accepted
+- **Status:** Accepted; decision 8 implemented by [ADR 0009](0009-request-validation.md)
 - **Date:** 2026-11-22
 
 ## Context

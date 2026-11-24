@@ -25,6 +25,9 @@ class ArchitectureTests {
     static final ArchRule endpointsDoNotExposeDomainTypes = ArchitectureRules.ENDPOINTS_DO_NOT_EXPOSE_DOMAIN_TYPES;
 
     @ArchTest
+    static final ArchRule requestBodiesAreValidated = ArchitectureRules.REQUEST_BODIES_ARE_VALIDATED;
+
+    @ArchTest
     static final ArchRule controllersLiveInApi = ArchitectureRules.CONTROLLERS_LIVE_IN_API;
 
     @ArchTest

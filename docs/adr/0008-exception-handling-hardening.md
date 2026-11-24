@@ -1,6 +1,6 @@
 # ADR 0008: Exception handling hardening (5xx policy, one advice, fixed locale)
 
-- **Status:** Accepted
+- **Status:** Accepted; extended by [ADR 0009](0009-request-validation.md)
 - **Date:** 2026-11-23
 - **Extends:** [ADR 0006](0006-global-exception-handling.md)
 

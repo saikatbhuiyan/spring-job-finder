@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,9 @@ import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.validation.method.ParameterErrors;
 import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.MatrixVariable;
@@ -34,10 +38,12 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.filter.ServerHttpObservationFilter;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.MismatchedInputException;
 import tools.jackson.databind.exc.UnrecognizedPropertyException;
+import tools.jackson.databind.exc.ValueInstantiationException;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -180,9 +186,9 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         List<Violation> violations = new ArrayList<>();
         ex.getBindingResult().getFieldErrors()
-                .forEach(error -> violations.add(Violation.atPointer(pointer(error.getField()), message(error))));
+                .forEach(error -> violations.add(Violation.atPointer(pointer(error.getField()), code(error), message(error))));
         ex.getBindingResult().getGlobalErrors()
-                .forEach(error -> violations.add(Violation.atPointer("#", message(error))));
+                .forEach(error -> violations.add(Violation.atPointer("#", code(error), message(error))));
         return validationProblem(ex, violations, headers, request);
     }
 
@@ -224,9 +230,9 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             @Override
             public void requestBody(RequestBody annotation, ParameterErrors errors) {
                 errors.getFieldErrors()
-                        .forEach(error -> violations.add(Violation.atPointer(pointer(error.getField()), message(error))));
+                        .forEach(error -> violations.add(Violation.atPointer(pointer(error.getField()), code(error), message(error))));
                 errors.getGlobalErrors()
-                        .forEach(error -> violations.add(Violation.atPointer("#", message(error))));
+                        .forEach(error -> violations.add(Violation.atPointer("#", code(error), message(error))));
             }
 
             @Override
@@ -238,7 +244,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             public void modelAttribute(@Nullable ModelAttribute annotation, ParameterErrors errors) {
                 // Model attributes bind query parameters, so report each field as a parameter.
                 errors.getFieldErrors()
-                        .forEach(error -> violations.add(Violation.atParameter(error.getField(), message(error))));
+                        .forEach(error -> violations.add(Violation.atParameter(error.getField(), code(error), message(error))));
             }
 
             @Override
@@ -250,7 +256,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             private void addParameter(String declaredName, ParameterValidationResult result) {
                 String name = !declaredName.isEmpty() ? declaredName : result.getMethodParameter().getParameterName();
                 result.getResolvableErrors()
-                        .forEach(error -> violations.add(Violation.atParameter(name, message(error))));
+                        .forEach(error -> violations.add(Violation.atParameter(name, code(error), message(error))));
             }
         });
         return validationProblem(ex, violations, headers, request);
@@ -262,15 +268,52 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         MismatchedInputException mismatch = findCause(ex, MismatchedInputException.class);
         if (mismatch != null) {
-            String detail = mismatch instanceof UnrecognizedPropertyException
-                    ? "is not a known property"
-                    : "has an invalid value or type";
-            return validationProblem(ex, List.of(Violation.atPointer(pointer(mismatch.getPath()), detail)), headers, request);
+            Violation violation = mismatch instanceof UnrecognizedPropertyException
+                    ? Violation.atPointer(pointer(mismatch.getPath()), Violation.UNKNOWN_PROPERTY, "is not a known property")
+                    : Violation.atPointer(pointer(mismatch.getPath()), Violation.INVALID_TYPE, "has an invalid value or type");
+            return validationProblem(ex, List.of(violation), headers, request);
+        }
+        // The request type's constructor threw (e.g. a record that checks its own arguments). The
+        // JSON was fine, so this is a validation error, not a malformed body. The exception message
+        // isn't passed on: it's not written for clients. Request types should use constraints instead.
+        ValueInstantiationException rejected = findCause(ex, ValueInstantiationException.class);
+        if (rejected != null) {
+            Violation violation = Violation.atPointer(pointer(rejected.getPath()), Violation.INVALID_VALUE, "is not valid");
+            return validationProblem(ex, List.of(violation), headers, request);
         }
         // Jackson's message names our internal classes, so it is never passed on to the client.
         ProblemDetail problem = problem(HttpStatus.BAD_REQUEST, ProblemTypes.MALFORMED_REQUEST_BODY,
                 "Malformed request body", "The request body is missing or is not valid JSON.");
         return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
+    }
+
+    /** A query or path parameter couldn't be converted ({@code ?page_size=abc}, an unknown enum value). */
+    @Override
+    protected ResponseEntity<Object> handleTypeMismatch(
+            TypeMismatchException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        // Spring's default detail echoes the value ("Failed to convert 'page_size' with value: 'abc'").
+        String name = ex instanceof MethodArgumentTypeMismatchException argument ? argument.getName() : ex.getPropertyName();
+        Violation violation = Violation.atParameter(name != null ? name : "", Violation.INVALID_TYPE, "has an invalid value or type");
+        return validationProblem(ex, List.of(violation), headers, request);
+    }
+
+    /** A required {@code @RequestParam} is absent (or empty, for a type that can't be empty). */
+    @Override
+    protected ResponseEntity<Object> handleMissingServletRequestParameter(
+            MissingServletRequestParameterException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        Violation violation = Violation.atParameter(ex.getParameterName(), Violation.REQUIRED, "is required");
+        return validationProblem(ex, List.of(violation), headers, request);
+    }
+
+    /** A required {@code @RequestHeader} is absent; other binding failures keep the standard 400. */
+    @Override
+    protected ResponseEntity<Object> handleServletRequestBindingException(
+            ServletRequestBindingException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        if (ex instanceof MissingRequestHeaderException missingHeader) {
+            Violation violation = Violation.atParameter(missingHeader.getHeaderName(), Violation.REQUIRED, "is required");
+            return validationProblem(ex, List.of(violation), headers, request);
+        }
+        return super.handleServletRequestBindingException(ex, headers, status, request);
     }
 
     // --- Helpers ---------------------------------------------------------------------------------
@@ -303,6 +346,16 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static String message(MessageSourceResolvable error) {
         String message = error.getDefaultMessage();
         return message != null ? message : "is invalid";
+    }
+
+    /**
+     * The constraint name ({@code NotBlank}, {@code Size}, a custom {@code SalaryRange}): Spring lists
+     * a violation's message codes from most to least specific ({@code NotBlank.jobRequest.title} ...
+     * {@code NotBlank}), so the last one is the bare constraint name.
+     */
+    private static String code(MessageSourceResolvable error) {
+        String[] codes = error.getCodes();
+        return codes != null && codes.length > 0 ? codes[codes.length - 1] : Violation.INVALID_VALUE;
     }
 
     /** Bean property path ({@code company.name}, {@code tags[0]}) to a JSON Pointer ({@code #/company/name}). */
