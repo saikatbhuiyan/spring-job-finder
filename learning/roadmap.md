@@ -52,7 +52,7 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | 🧪 | Spring Data vs Spring Data JPA, repositories, derived queries, dirty checking ([note 23](23-spring-data-vs-spring-data-jpa.md)); Spring Data JPA ↔ Hibernate internals ([note 24](24-spring-data-jpa-and-hibernate.md)); components: projections, N+1, Specifications, auditing, `@Version` ([note 25](25-spring-data-jpa-components.md)); interfaces, keyset scrolling ([note 26](26-spring-data-interfaces.md)); derived query methods ([note 27](27-derived-query-methods.md)); `@Query` JPQL/native, `@Modifying` ([note 28](28-query-annotation.md)); Lombok and entity boilerplate ([note 29](29-lombok.md)) | Choosing the persistence approach |
 | 🔜 | Database with Spring Data JPA + PostgreSQL | `Job`, `Company`, `Application` entities |
 | 🔜 | Schema migrations with Flyway | Versioned database changes |
-| 🔜 | Search, filtering, pagination | Search jobs by title, location, salary |
+| 🧪 | Search, filtering, pagination: pagination and sorting contract ✅ ([note 35](35-pagination-and-sorting.md), [ADR 0010](../docs/adr/0010-pagination-and-sorting.md)); search and filters 🔜 | Search jobs by title, location, salary |
 | 🔜 | Spring Security + JWT | Job seekers and employers log in |
 | 🔜 | Integration testing: `@SpringBootTest`, Testcontainers | Tests against a real DB |
 | 🔜 | API docs with OpenAPI / Swagger UI | Portfolio-friendly API explorer |
