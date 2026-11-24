@@ -34,3 +34,9 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### AI assistants ###
+# Shared config (CLAUDE.md, AGENTS.md, .claude/settings.json, skills, agents) is tracked;
+# personal overrides are not.
+.claude/settings.local.json
+CLAUDE.local.md

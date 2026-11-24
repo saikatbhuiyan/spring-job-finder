@@ -151,6 +151,9 @@ src/test/java/com/shahabuddin/jobfinder/
 docs/adr/                          # Architecture Decision Records
 docs/problems.md                   # catalogue of the API's Problem Details types
 learning/                          # step-by-step notes (see below)
+AGENTS.md                          # instructions for AI coding agents (conventions, commands, definition of done)
+CLAUDE.md                          # Claude Code entry point: imports AGENTS.md
+.claude/                           # Claude Code: shared permissions, skills (/feature-module, /adr, /learning-note), reviewer subagent
 ```
 
 ## Learning notes

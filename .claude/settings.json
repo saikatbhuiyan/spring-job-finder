@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(mvn test)",
+      "Bash(mvn test *)",
+      "Bash(mvn -q test)",
+      "Bash(mvn -q test *)",
+      "Bash(mvn compile)",
+      "Bash(mvn -q compile)",
+      "Bash(mvn test-compile)",
+      "Bash(mvn -q test-compile)",
+      "Bash(mvn verify)",
+      "Bash(mvn -q verify)",
+      "Bash(mvn package)",
+      "Bash(mvn clean package)",
+      "Bash(mvn -q clean package)",
+      "Bash(mvn dependency:tree *)",
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git diff)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch)",
+      "Bash(git tag)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Read(./**/*.p12)",
+      "Read(./**/*.jks)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git push --force-with-lease *)",
+      "Bash(git push * --delete *)",
+      "Bash(git tag -d *)",
+      "Bash(git tag --delete *)"
+    ]
+  }
+}
