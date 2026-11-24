@@ -30,6 +30,7 @@ class ArchitectureRulesTests {
                 Arguments.of("domain is web-agnostic", ArchitectureRules.DOMAIN_IS_WEB_AGNOSTIC, "WebAwareJob"),
                 Arguments.of("api does not use repositories", ArchitectureRules.API_DOES_NOT_USE_REPOSITORIES, "ShortcutController"),
                 Arguments.of("endpoints do not expose domain types", ArchitectureRules.ENDPOINTS_DO_NOT_EXPOSE_DOMAIN_TYPES, "LeakyController"),
+                Arguments.of("endpoints page through the API contract", ArchitectureRules.ENDPOINTS_PAGE_THROUGH_THE_API_CONTRACT, "RawPagingController"),
                 Arguments.of("request bodies are validated", ArchitectureRules.REQUEST_BODIES_ARE_VALIDATED, "UnvalidatedController"),
                 Arguments.of("controllers live in api", ArchitectureRules.CONTROLLERS_LIVE_IN_API, "MisplacedController"),
                 Arguments.of("controller advice only in shared api", ArchitectureRules.CONTROLLER_ADVICE_ONLY_IN_SHARED_API, "JobExceptionHandler"),
@@ -63,6 +64,15 @@ class ArchitectureRulesTests {
                 .hasMessageContaining(body + ".yearsOfExperience is primitive int")
                 .hasMessageContaining(body + ".address is not validated")
                 .hasMessageContaining(body + ".previous is not validated");
+    }
+
+    @Test
+    void springDataPagingTypesAreCaughtInParametersAndGenericReturnTypes() {
+        assertThatThrownBy(() -> ArchitectureRules.ENDPOINTS_PAGE_THROUGH_THE_API_CONTRACT.check(VIOLATIONS))
+                .hasMessageContaining("RawPagingController.list(org.springframework.data.domain.Pageable) accepts Pageable")
+                .hasMessageContaining("RawPagingController.sorted(org.springframework.data.domain.Sort) accepts Sort")
+                .hasMessageContaining("RawPagingController.page() returns Page")
+                .hasMessageContaining("(3 times)");
     }
 
     @Test

@@ -12,6 +12,9 @@ import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import com.tngtech.archunit.library.GeneralCodingRules;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -24,7 +27,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.tngtech.archunit.base.DescribedPredicate.not;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyPackage;
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
@@ -49,17 +54,29 @@ public final class ArchitectureRules {
     private static final String DOMAIN = "..domain..";
     private static final String INFRASTRUCTURE = "..infrastructure..";
 
+    /**
+     * Libraries can have packages named like our layers: Spring Data's paging types live in
+     * {@code org.springframework.data.domain}. Layer patterns must only ever match our own code.
+     */
+    private static final DescribedPredicate<JavaClass> LIBRARY = resideInAnyPackage(
+            "java..", "javax..", "jakarta..", "org.springframework..", "tools.jackson..", "com.fasterxml..")
+            .as("library code");
+
     private ArchitectureRules() {
+    }
+
+    private static DescribedPredicate<JavaClass> ours(String packagePattern) {
+        return resideInAPackage(packagePattern).and(not(LIBRARY)).as("our " + packagePattern);
     }
 
     /** Dependencies flow inwards: api → application → domain ← infrastructure. */
     public static final ArchRule LAYER_DEPENDENCIES = layeredArchitecture()
             .consideringOnlyDependenciesInLayers()
             .withOptionalLayers(true)
-            .layer("Api").definedBy(API)
-            .layer("Application").definedBy(APPLICATION)
-            .layer("Domain").definedBy(DOMAIN)
-            .layer("Infrastructure").definedBy(INFRASTRUCTURE)
+            .layer("Api").definedBy(ours(API))
+            .layer("Application").definedBy(ours(APPLICATION))
+            .layer("Domain").definedBy(ours(DOMAIN))
+            .layer("Infrastructure").definedBy(ours(INFRASTRUCTURE))
             .whereLayer("Api").mayNotBeAccessedByAnyLayer()
             .whereLayer("Application").mayOnlyBeAccessedByLayers("Api", "Infrastructure")
             .whereLayer("Domain").mayOnlyBeAccessedByLayers("Api", "Application", "Infrastructure")
@@ -100,7 +117,7 @@ public final class ArchitectureRules {
             .because("entities in an API leak internal fields, allow overposting and break on lazy loading");
 
     private static ArchCondition<JavaMethod> notHaveDomainTypesInSignature() {
-        DescribedPredicate<JavaClass> inDomain = resideInAPackage(DOMAIN);
+        DescribedPredicate<JavaClass> inDomain = ours(DOMAIN);
         return new ArchCondition<>("not accept or return domain types") {
             @Override
             public void check(JavaMethod method, ConditionEvents events) {
@@ -186,10 +203,40 @@ public final class ArchitectureRules {
 
     /** A type declared by the application (not the JDK or a library) that can carry constraints. */
     private static boolean isApplicationType(JavaClass type) {
-        String name = type.getName();
-        return !type.isPrimitive() && !type.isEnum() && !type.isArray()
-                && Stream.of("java.", "javax.", "jakarta.", "org.springframework.", "tools.jackson.", "com.fasterxml.")
-                .noneMatch(name::startsWith);
+        return !type.isPrimitive() && !type.isEnum() && !type.isArray() && !LIBRARY.test(type);
+    }
+
+    /**
+     * Paging goes through the API's contract (see docs/adr/0010-pagination-and-sorting.md): endpoints
+     * take a {@code PageQuery}, not Spring Data's {@code Pageable} / {@code Sort}, whose web binding
+     * silently replaces invalid input with defaults and lets clients sort by any property (verified).
+     * They return {@code PagedModel}, not {@code Page} / {@code Slice}, whose JSON is not a stable
+     * contract (ADR 0005). Generic type arguments are checked too.
+     */
+    public static final ArchRule ENDPOINTS_PAGE_THROUGH_THE_API_CONTRACT = methods()
+            .that().areDeclaredInClassesThat(annotatedWith(RestController.class).or(annotatedWith(Controller.class)))
+            .and().areMetaAnnotatedWith(RequestMapping.class)
+            .should(notUseSpringDataPagingTypes())
+            .allowEmptyShould(true)
+            .because("Spring Data's web binding accepts invalid and unsafe paging input, and Page has no stable JSON");
+
+    private static ArchCondition<JavaMethod> notUseSpringDataPagingTypes() {
+        return new ArchCondition<>("not accept Pageable/Sort or return Page/Slice") {
+            @Override
+            public void check(JavaMethod method, ConditionEvents events) {
+                method.getParameterTypes().stream()
+                        .flatMap(type -> type.getAllInvolvedRawTypes().stream())
+                        .filter(type -> type.isAssignableTo(Pageable.class) || type.isAssignableTo(Sort.class))
+                        .distinct()
+                        .forEach(type -> events.add(SimpleConditionEvent.violated(method, method.getFullName()
+                                + " accepts " + type.getSimpleName() + " (use PageQuery)")));
+                method.getReturnType().getAllInvolvedRawTypes().stream()
+                        .filter(type -> type.isAssignableTo(Slice.class))
+                        .distinct()
+                        .forEach(type -> events.add(SimpleConditionEvent.violated(method, method.getFullName()
+                                + " returns " + type.getSimpleName() + " (use PagedModel)")));
+            }
+        };
     }
 
     /** HTTP endpoints live only in the api layer. */

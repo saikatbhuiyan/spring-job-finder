@@ -17,6 +17,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.validation.FieldError;
 import org.springframework.validation.method.ParameterErrors;
 import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -97,6 +98,12 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         };
         log.debug("{} answered with {}: {}", ex.getClass().getSimpleName(), problem.getStatus(), ex.getMessage());
         return handleExceptionInternal(ex, problem, new HttpHeaders(), HttpStatusCode.valueOf(problem.getStatus()), request);
+    }
+
+    /** Query parameters rejected by our own binding code, e.g. {@link PageQueryArgumentResolver}. */
+    @ExceptionHandler(InvalidRequestParametersException.class)
+    ResponseEntity<Object> handleInvalidRequestParameters(InvalidRequestParametersException ex, WebRequest request) {
+        return validationProblem(ex, ex.violations(), new HttpHeaders(), request);
     }
 
     // --- Everything else: bugs and infrastructure failures ------------------------------------
@@ -180,16 +187,32 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     // --- Validation: say which field or parameter is wrong ------------------------------------
 
-    /** {@code @Valid @RequestBody} failed. */
+    /**
+     * {@code @Valid} failed on a {@code @RequestBody} (fields are JSON Pointers) or on an object bound
+     * from query parameters (fields are parameters: they were reported as body pointers before).
+     */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        boolean body = ex.getParameter().hasParameterAnnotation(RequestBody.class);
         List<Violation> violations = new ArrayList<>();
-        ex.getBindingResult().getFieldErrors()
-                .forEach(error -> violations.add(Violation.atPointer(pointer(error.getField()), code(error), message(error))));
-        ex.getBindingResult().getGlobalErrors()
-                .forEach(error -> violations.add(Violation.atPointer("#", code(error), message(error))));
+        ex.getBindingResult().getFieldErrors().forEach(error -> violations.add(body
+                ? Violation.atPointer(pointer(error.getField()), code(error), message(error))
+                : parameterViolation(error)));
+        ex.getBindingResult().getGlobalErrors().forEach(error -> violations.add(body
+                ? Violation.atPointer("#", code(error), message(error))
+                : Violation.atParameter(ex.getBindingResult().getObjectName(), code(error), message(error))));
         return validationProblem(ex, violations, headers, request);
+    }
+
+    /**
+     * A query parameter bound to an object's field. A value that couldn't be converted gets our code
+     * and message: Spring's would be {@code typeMismatch} with Java type names and the rejected value.
+     */
+    private static Violation parameterViolation(FieldError error) {
+        return error.isBindingFailure()
+                ? Violation.atParameter(error.getField(), Violation.INVALID_TYPE, "has an invalid value or type")
+                : Violation.atParameter(error.getField(), code(error), message(error));
     }
 
     /** Method validation failed: constraints directly on {@code @RequestParam}, {@code @PathVariable}... */
@@ -243,8 +266,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             @Override
             public void modelAttribute(@Nullable ModelAttribute annotation, ParameterErrors errors) {
                 // Model attributes bind query parameters, so report each field as a parameter.
-                errors.getFieldErrors()
-                        .forEach(error -> violations.add(Violation.atParameter(error.getField(), code(error), message(error))));
+                errors.getFieldErrors().forEach(error -> violations.add(parameterViolation(error)));
             }
 
             @Override

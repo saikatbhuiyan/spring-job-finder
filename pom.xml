@@ -50,6 +50,14 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Spring Data's paging types (Pageable, Sort, Page, PagedModel) as the internal currency between
+             the API and use cases (ADR 0010). Only the core library: no persistence yet, and no Spring
+             Data web auto-configuration (clients' paging input goes through PageQuery, not Pageable). -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-commons</artifactId>
+        </dependency>
+
         <!-- Production-ready endpoints: /actuator/health, metrics, info... -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

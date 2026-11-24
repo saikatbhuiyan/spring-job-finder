@@ -154,6 +154,39 @@ class ValidationTests {
     }
 
     @Test
+    void queryParametersBoundToAnObjectAreReportedAsParameters() {
+        // Were reported as body pointers ("#/minSalary").
+        client.get().uri("/api/v1/validation-probe/filter?minSalary=-1&maxSalary=5000000")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.type").isEqualTo(VALIDATION_ERROR)
+                .jsonPath("$.errors.length()").isEqualTo(2)
+                .jsonPath("$.errors[0].parameter").isEqualTo("maxSalary")
+                .jsonPath("$.errors[0].code").isEqualTo("Max")
+                .jsonPath("$.errors[0].pointer").doesNotExist()
+                .jsonPath("$.errors[1].parameter").isEqualTo("minSalary")
+                .jsonPath("$.errors[1].code").isEqualTo("PositiveOrZero");
+    }
+
+    @Test
+    void unconvertibleQueryParameterOfAnObjectIsAnInvalidTypeWithoutSpringsMessage() {
+        // Spring's own entry was code "typeMismatch" with a message naming java.lang.Integer and
+        // echoing the input. The record can't be created then, so its constraints (maxSalary) are
+        // only checked once every value converts.
+        client.get().uri("/api/v1/validation-probe/filter?minSalary=abc&maxSalary=5000000")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.errors.length()").isEqualTo(1)
+                .jsonPath("$.errors[0].parameter").isEqualTo("minSalary")
+                .jsonPath("$.errors[0].code").isEqualTo("InvalidType")
+                .jsonPath("$.errors[0].detail").isEqualTo("has an invalid value or type")
+                .consumeWith(result -> assertThat(new String(result.getResponseBodyContent()))
+                        .doesNotContain("abc").doesNotContain("java.lang"));
+    }
+
+    @Test
     void missingRequiredHeaderIsAValidationError() {
         client.get().uri("/api/v1/validation-probe/search?q=java")
                 .exchange()
@@ -206,6 +239,10 @@ class ValidationTests {
     }
 
     record TitleRequest(String title) {
+    }
+
+    /** Search filters bound from query parameters (an implicit {@code @ModelAttribute}). */
+    record SalaryFilter(@PositiveOrZero Integer minSalary, @Max(1_000_000) Integer maxSalary) {
     }
 
     enum Status { OPEN, CLOSED }
@@ -279,6 +316,11 @@ class ValidationTests {
         @PostMapping(path = "/unchecked", version = "1")
         String unchecked(@RequestBody TitleRequest request) {
             service.publish(request.title());
+            return "ok";
+        }
+
+        @GetMapping(path = "/filter", version = "1")
+        String filter(@Valid SalaryFilter filter) {
             return "ok";
         }
 

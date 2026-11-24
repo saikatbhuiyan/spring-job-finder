@@ -2,11 +2,15 @@ package archfixture.compliant.job.api;
 
 import archfixture.compliant.job.application.JobService;
 import archfixture.compliant.job.domain.Job;
+import com.shahabuddin.jobfinder.shared.PageQuery;
+import com.shahabuddin.jobfinder.shared.SortableBy;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import org.springframework.data.domain.Page;
+import org.springframework.data.web.PagedModel;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,6 +32,12 @@ public class JobController {
     @GetMapping("/{id}")
     public JobResponse get(@PathVariable long id) {
         return toResponse(service.get(id));
+    }
+
+    /** Paging through the API contract: PageQuery in, PagedModel out. */
+    @GetMapping
+    public PagedModel<JobResponse> search(@SortableBy(value = {"title", "createdAt"}, defaultSort = "createdAt,desc") PageQuery page) {
+        return new PagedModel<>(Page.<Job>empty(page.toPageable()).map(JobController::toResponse));
     }
 
     @PostMapping

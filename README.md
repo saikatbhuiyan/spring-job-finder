@@ -13,7 +13,7 @@ documented and verified in the [`learning/`](learning/README.md) notes.
 | | Current | Planned |
 |-|---------|---------|
 | Language | Java 25 | |
-| Framework | Spring Boot 4.2 (Spring Framework 7.1), Spring MVC, Bean Validation, Actuator | Spring Data JPA, Spring Security |
+| Framework | Spring Boot 4.2 (Spring Framework 7.1), Spring MVC, Bean Validation, Spring Data Commons (paging types), Actuator | Spring Data JPA, Spring Security |
 | Build | Maven | |
 | Database | | PostgreSQL + Flyway |
 | Testing | JUnit 6, `@SpringBootTest` + `RestTestClient`, ArchUnit, Spring Modulith | Testcontainers |
@@ -55,6 +55,9 @@ API conventions:
 - **Validation:** Bean Validation on every request body (`@Valid` enforced by ArchUnit), strict JSON types
   (no `"5"` → 5 or `2.7` → 2), and a stable `code` per violation for bodies, parameters and headers
   ([ADR 0009](docs/adr/0009-request-validation.md)).
+- **Pagination:** list endpoints take `?page=0&size=20&sort=createdAt,desc` (size ≤ 100, sortable properties
+  declared per endpoint, `id` tiebreaker) and return `{"content": [...], "page": {...}}`; invalid paging input
+  is a `400`, never silently replaced ([ADR 0010](docs/adr/0010-pagination-and-sorting.md)).
 - **CORS:** browser origins are an explicit per-environment allowlist (`JOBFINDER_CORS_ALLOWEDORIGINS`),
   none by default, validated at startup ([ADR 0007](docs/adr/0007-cors-policy.md)).
 - **Logging:** SLF4J. Readable in `dev`, structured ECS JSON in `prod` ([ADR 0004](docs/adr/0004-logging-per-environment.md)).
@@ -120,7 +123,8 @@ src/main/java/com/shahabuddin/jobfinder/
 ├── JobFinderApplication.java      # @SpringBootApplication entry point
 └── shared/                        # shared kernel module
     ├── DomainException.java       # sealed: ResourceNotFoundException (404), ConflictException (409)
-    └── api/                       # GlobalExceptionHandler, ProblemDetailsErrorController (/error), CorsConfig, JsonBindingConfig
+    ├── PageQuery.java             # the API's paging contract (+ @SortableBy allowlist)
+    └── api/                       # GlobalExceptionHandler, ProblemDetailsErrorController (/error), CorsConfig, JsonBindingConfig, PageQuery binding
 src/main/resources/
 ├── application.properties         # shared: Actuator, API versioning, strict JSON, CORS (none)
 ├── application-dev.properties     # dev: readable logs, DEBUG, health details, CORS for localhost frontends
@@ -134,6 +138,7 @@ src/test/java/com/shahabuddin/jobfinder/
 ├── shared/api/GlobalExceptionHandlingTests.java  # every error path over HTTP, incl. filters and log capture
 ├── shared/api/CorsTests.java     # CORS with browser headers (preflight, errors, filter 401); CorsPropertiesTests
 ├── shared/api/ValidationTests.java # request validation: codes, strict JSON types, parameters, headers
+├── shared/api/PaginationTests.java # paging contract: defaults, limits, sort allowlist, tiebreaker; PageQueryTests
 └── architecture/                  # architecture rules (ArchUnit + Spring Modulith) and their tests
 docs/adr/                          # Architecture Decision Records
 docs/problems.md                   # catalogue of the API's Problem Details types
@@ -142,7 +147,7 @@ learning/                          # step-by-step notes (see below)
 
 ## Learning notes
 
-The [`learning/`](learning/README.md) folder is a step-by-step journal (35 notes so far). Each
+The [`learning/`](learning/README.md) folder is a step-by-step journal (36 notes so far). Each
 note explains a concept from scratch, shows the code, includes **real output from running
 experiments**, and ends with common mistakes and interview questions.
 
@@ -154,7 +159,7 @@ autowiring, circular dependencies, programmatic bean registration (Spring 7
 `@SpringBootApplication` with Actuator health checks, `@RestController` / REST API design, request mapping and binding, API versioning, clean architecture
 enforced with Spring Modulith and ArchUnit, per-environment logging with structured JSON, DevTools, JDBC fundamentals, Spring Data vs Spring Data JPA, how Spring Data JPA relates to Hibernate, and the
 important Spring Data JPA components (projections, N+1, Specifications, auditing, optimistic locking) and interfaces
-(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), the DTO pattern, global exception handling (and its production edge cases), CORS, and request validation.
+(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), the DTO pattern, global exception handling (and its production edge cases), CORS, request validation, and pagination and sorting.
 
 The original plain-Spring demo code from the early notes is preserved at the git tag
 [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).

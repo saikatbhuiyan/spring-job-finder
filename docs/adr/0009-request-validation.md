@@ -1,6 +1,6 @@
 # ADR 0009: Request validation
 
-- **Status:** Accepted
+- **Status:** Accepted; extended by [ADR 0010](0010-pagination-and-sorting.md)
 - **Date:** 2026-11-24
 - **Implements:** [ADR 0005](0005-dtos-at-the-api-boundary.md) decision 8. **Extends:**
   [ADR 0006](0006-global-exception-handling.md), [ADR 0008](0008-exception-handling-hardening.md)
