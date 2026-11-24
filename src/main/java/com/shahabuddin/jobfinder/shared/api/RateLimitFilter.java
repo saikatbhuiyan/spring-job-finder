@@ -73,6 +73,7 @@ final class RateLimitFilter extends OncePerRequestFilter {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS,
                 "Too many requests. Retry after " + retryAfterSeconds + (retryAfterSeconds == 1 ? " second." : " seconds."));
         problem.setInstance(GlobalExceptionHandler.toInstance(request.getRequestURI()));
+        TraceIdFilter.addTraceId(problem, request);
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(retryAfterSeconds));
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);

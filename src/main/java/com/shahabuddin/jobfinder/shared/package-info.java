@@ -6,6 +6,6 @@
  * paging contract ({@link com.shahabuddin.jobfinder.shared.PageQuery},
  * {@link com.shahabuddin.jobfinder.shared.SortableBy}) that controllers declare. The {@code api}
  * sub-package holds the HTTP infrastructure behind them (error handling, CORS, JSON and paging
- * binding), which no other module references.
+ * binding, rate limiting, request tracing), which no other module references.
  */
 package com.shahabuddin.jobfinder.shared;

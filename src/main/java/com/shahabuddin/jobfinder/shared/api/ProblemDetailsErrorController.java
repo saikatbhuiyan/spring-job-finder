@@ -39,9 +39,11 @@ class ProblemDetailsErrorController implements ErrorController {
         if (requestUri != null) {
             problem.setInstance(GlobalExceptionHandler.toInstance(requestUri));
         }
-        // Not logged at ERROR here: the servlet container (Tomcat's StandardWrapperValve) has already
-        // logged the exception with its stack trace before forwarding to this path; a second copy
-        // would duplicate every alert.
+        // Set during the original dispatch: this one runs after the trace's scope has closed.
+        TraceIdFilter.addTraceId(problem, request);
+        // Not logged at ERROR here: an exception was already logged with its stack trace before the
+        // forward to this path, by TraceIdFilter (inside the trace) or, for a failure in a filter
+        // that runs before it, by the servlet container. A second copy would duplicate every alert.
         log.debug("Error {} on {} {} answered with Problem Details", status.value(), request.getMethod(), requestUri);
         return ResponseEntity.status(status).contentType(MediaType.APPLICATION_PROBLEM_JSON).body(problem);
     }

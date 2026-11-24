@@ -41,9 +41,11 @@ class CorsConfig {
     /**
      * Response headers the frontend may read. Browsers hide everything else: {@code Location} of a
      * {@code 201}, the API version retirement headers {@code Deprecation}, {@code Sunset} and
-     * {@code Link} (ADR 0002), and {@code Retry-After} of a {@code 429} (ADR 0012).
+     * {@code Link} (ADR 0002), {@code Retry-After} of a {@code 429} (ADR 0012), and the request's
+     * {@code X-Trace-Id} (ADR 0013).
      */
-    static final List<String> EXPOSED_HEADERS = List.of("Location", "Deprecation", "Sunset", "Link", "Retry-After");
+    static final List<String> EXPOSED_HEADERS =
+            List.of("Location", "Deprecation", "Sunset", "Link", "Retry-After", TraceIdFilter.HEADER);
 
     private static final Logger log = LoggerFactory.getLogger(CorsConfig.class);
 

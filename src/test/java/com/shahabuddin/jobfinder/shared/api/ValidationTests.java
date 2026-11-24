@@ -134,7 +134,7 @@ class ValidationTests {
 
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', textBlock = """
-            not a number         | /api/v1/validation-probe/search?page_size=abc&q=java        | page_size | InvalidType
+            not a number         | /api/v1/validation-probe/search?page_size=xyz&q=java        | page_size | InvalidType
             unknown enum value   | /api/v1/validation-probe/search?status=OPENX&q=java         | status    | InvalidType
             out of range         | /api/v1/validation-probe/search?page_size=500&q=java        | page_size | Max
             missing              | /api/v1/validation-probe/search                             | q         | Required
@@ -149,8 +149,10 @@ class ValidationTests {
                 .jsonPath("$.errors.length()").isEqualTo(1)
                 .jsonPath("$.errors[0].parameter").isEqualTo(parameter)
                 .jsonPath("$.errors[0].code").isEqualTo(code)
+                // Probe values have non-hex letters: every body carries a random hex traceId, which
+                // contained "abc" now and then (seen: a flaky failure).
                 .consumeWith(result -> assertThat(new String(result.getResponseBodyContent()))
-                        .doesNotContain("abc").doesNotContain("OPENX"));
+                        .doesNotContain("xyz").doesNotContain("OPENX"));
     }
 
     @Test
@@ -174,7 +176,7 @@ class ValidationTests {
         // Spring's own entry was code "typeMismatch" with a message naming java.lang.Integer and
         // echoing the input. The record can't be created then, so its constraints (maxSalary) are
         // only checked once every value converts.
-        client.get().uri("/api/v1/validation-probe/filter?minSalary=abc&maxSalary=5000000")
+        client.get().uri("/api/v1/validation-probe/filter?minSalary=xyz&maxSalary=5000000")
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectBody()
@@ -182,8 +184,9 @@ class ValidationTests {
                 .jsonPath("$.errors[0].parameter").isEqualTo("minSalary")
                 .jsonPath("$.errors[0].code").isEqualTo("InvalidType")
                 .jsonPath("$.errors[0].detail").isEqualTo("has an invalid value or type")
+                // "xyz", not a hex-only value: the body's random traceId must not match it by chance.
                 .consumeWith(result -> assertThat(new String(result.getResponseBodyContent()))
-                        .doesNotContain("abc").doesNotContain("java.lang"));
+                        .doesNotContain("xyz").doesNotContain("java.lang"));
     }
 
     @Test

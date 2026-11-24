@@ -172,15 +172,19 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * Every response from this class passes through here (also the ones produced by the inherited
-     * Spring MVC handling): set {@code instance} to the request path, so a client can report
-     * exactly which call failed. The query string is left out, as it may carry personal data.
+     * Spring MVC handling): set {@code instance} to the request path and add the request's
+     * {@code traceId}, so a client can report exactly which call failed and support can find its
+     * log lines (ADR 0013). The query string is left out, as it may carry personal data.
      */
     @Override
     protected ResponseEntity<Object> createResponseEntity(
             @Nullable Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
-        if (body instanceof ProblemDetail problem && problem.getInstance() == null
-                && request instanceof ServletWebRequest servletWebRequest) {
-            problem.setInstance(toInstance(servletWebRequest.getRequest().getRequestURI()));
+        if (body instanceof ProblemDetail problem && request instanceof ServletWebRequest servletWebRequest) {
+            HttpServletRequest servletRequest = servletWebRequest.getRequest();
+            if (problem.getInstance() == null) {
+                problem.setInstance(toInstance(servletRequest.getRequestURI()));
+            }
+            TraceIdFilter.addTraceId(problem, servletRequest);
         }
         return super.createResponseEntity(body, headers, statusCode, request);
     }

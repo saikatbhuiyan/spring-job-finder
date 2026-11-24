@@ -364,10 +364,33 @@ class GlobalExceptionHandlingTests {
                 .jsonPath("$.detail").isEqualTo("An unexpected error occurred.")
                 .jsonPath("$.instance").isEqualTo("/api/v1/filter-probe/throws")
                 .jsonPath("$.timestamp").doesNotExist()
-                .consumeWith(result -> assertThat(new String(result.getResponseBodyContent())).doesNotContain("hunter2"));
+                .consumeWith(result -> {
+                    assertThat(new String(result.getResponseBodyContent())).doesNotContain("hunter2");
+                    // The trace ID the client sees finds the stack trace (ADR 0013): logged once, by
+                    // TraceIdFilter inside the trace, not by the servlet container after it had closed,
+                    // and not a second time by the error controller.
+                    String traceId = result.getResponseHeaders().getFirst("X-Trace-Id");
+                    assertThat(traceId).matches("[0-9a-f]{32}");
+                    assertThat(new String(result.getResponseBodyContent())).contains("\"traceId\":\"" + traceId + "\"");
+                    assertThat(occurrences(output.getAll(), "java.lang.IllegalStateException: filter " + SECRET)).isOne();
+                    assertThat(output.getAll().lines()
+                            .filter(line -> line.contains("GET /api/v1/filter-probe/throws failed with 500")))
+                            .singleElement().satisfies(line -> assertThat(line).contains(traceId));
+                });
 
-        // Logged once, by the servlet container, not a second time by the error controller.
-        assertThat(occurrences(output.getAll(), "java.lang.IllegalStateException: filter " + SECRET)).isOne();
+        // The exception no longer passes the observation filter; it's still recorded in metrics. (The
+        // request never reached a handler, so it has no URI pattern: "UNKNOWN".)
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> assertThat(meters.find("http.server.requests").tags(
+                "uri", "UNKNOWN", "status", "500", "exception", "IllegalStateException").timer()).isNotNull());
+    }
+
+    @Test
+    void aWrappedFilterExceptionIsRecordedUnderItsCause() {
+        client.get().uri("/api/v1/filter-probe/throws-wrapped").exchange().expectStatus().isEqualTo(500);
+
+        // As Spring's observation filter does: metrics name the cause, not the ServletException wrapper.
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> assertThat(meters.find("http.server.requests").tags(
+                "uri", "UNKNOWN", "status", "500", "exception", "UnsupportedOperationException").timer()).isNotNull());
     }
 
     private static int occurrences(String text, String fragment) {
@@ -415,6 +438,9 @@ class GlobalExceptionHandlingTests {
                         throws ServletException, IOException {
                     switch (request.getRequestURI()) {
                         case "/api/v1/filter-probe/throws" -> throw new IllegalStateException("filter " + SECRET);
+                        // How failures escaping the DispatcherServlet arrive: wrapped.
+                        case "/api/v1/filter-probe/throws-wrapped" ->
+                                throw new ServletException("Request processing failed", new UnsupportedOperationException("wrapped"));
                         case "/api/v1/filter-probe/unauthorized" -> response.sendError(401);
                         default -> chain.doFilter(request, response);
                     }

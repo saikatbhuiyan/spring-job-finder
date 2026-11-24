@@ -80,6 +80,21 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- Request correlation (ADR 0013): a W3C trace per request, its trace ID in every log line,
+             in the X-Trace-Id header and in Problem Details. Boot's Micrometer Tracing auto-configuration
+             with the OpenTelemetry bridge (which also provides the io.micrometer.tracing API we use).
+             No exporter yet. Deliberately not spring-boot-starter-opentelemetry: it also brings the OTLP
+             exporters, and its metrics registry pushed to http://localhost:4318 every minute with no
+             configuration at all (measured). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-micrometer-tracing-opentelemetry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+
         <!-- Development only: automatic restart, LiveReload, dev-friendly defaults.
              runtime + optional: not a compile dependency, not passed on to other projects,
              and excluded from the packaged jar by spring-boot-maven-plugin. -->

@@ -11,7 +11,8 @@ small, must be what a senior engineer would approve for production.
 
 - Java **25**, Spring Boot **4.2** (Spring Framework 7.1), Spring MVC, Bean Validation, Actuator
 - Jackson **3** (package `tools.jackson`, not `com.fasterxml.jackson`), JUnit **6**
-- Spring Modulith 2.2 + ArchUnit 1.5.1 (architecture enforced in tests), Bucket4j + Caffeine (rate limiting)
+- Spring Modulith 2.2 + ArchUnit 1.5.1 (architecture enforced in tests), Bucket4j + Caffeine (rate limiting),
+  Micrometer Tracing + OpenTelemetry bridge (trace IDs; no exporter yet)
 - Maven 3.9+ (no wrapper; use `mvn`). Planned: Spring Data JPA, PostgreSQL + Flyway, Spring Security,
   Testcontainers, Docker, CI ([roadmap](learning/roadmap.md)).
 
@@ -20,7 +21,7 @@ Base package: `com.shahabuddin.jobfinder`. Remote: `github.com/saikatbhuiyan/spr
 ## Commands
 
 ```bash
-mvn -q test                                   # full suite: ~150 tests, ~15 s. Must pass before any change is done
+mvn -q test                                   # full suite: ~165 tests, ~20 s. Must pass before any change is done
 mvn -q test -Dtest=RateLimitTests             # one test class
 mvn -q test -Dtest='ArchitectureTests,ModularityTests'   # architecture rules only
 mvn spring-boot:run                           # dev profile, http://localhost:8080
@@ -79,6 +80,7 @@ on bad code (`ArchitectureRulesTests`, `ModularityRulesTests`).
 | Paging | `?page=0&size=20&sort=createdAt,desc`, size ≤ 100, sort allowlist, `id` tiebreaker; bad input = 400 | [0010](docs/adr/0010-pagination-and-sorting.md) |
 | Filtering | Filter records, ISO-8601 dates, normalized `q` (`SearchText`); unknown query parameter = 400 | [0011](docs/adr/0011-filtering-and-search.md) |
 | Rate limiting | Token bucket per `getRemoteAddr()` on `/api/**`; 429 + `Retry-After`; never read `X-Forwarded-For` in code | [0012](docs/adr/0012-rate-limiting.md) |
+| Correlation | The W3C trace ID is the correlation ID: `X-Trace-Id` header + `traceId` in every problem; never a hand-rolled request ID or MDC key; W3C propagation only, no baggage; use Boot's executors and `RestClient.Builder` so the trace propagates | [0013](docs/adr/0013-request-correlation.md) |
 | CORS | Per-environment allowlist (`jobfinder.cors.allowed-origins`), none by default | [0007](docs/adr/0007-cors-policy.md) |
 | Logging | Readable in `dev`, ECS JSON in `prod` | [0004](docs/adr/0004-logging-per-environment.md) |
 

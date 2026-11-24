@@ -9,7 +9,8 @@ Every error response of the Job Finder API is an [RFC 9457](https://www.rfc-edit
   "title": "Resource not found",
   "status": 404,
   "detail": "Job '42' was not found.",
-  "instance": "/api/v1/jobs/42"
+  "instance": "/api/v1/jobs/42",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736"
 }
 ```
 
@@ -20,6 +21,7 @@ Every error response of the Job Finder API is an [RFC 9457](https://www.rfc-edit
 | `status` | The HTTP status code |
 | `detail` | Explanation of this occurrence, safe to show to a user |
 | `instance` | The request path that failed |
+| `traceId` | The request's trace ID, also in the `X-Trace-Id` response header. **Quote it when reporting a problem**: it finds every log line of that request ([ADR 0013](adr/0013-request-correlation.md)) |
 
 A `500` never contains internal details: `"detail": "An unexpected error occurred."`.
 

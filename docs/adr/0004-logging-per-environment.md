@@ -1,6 +1,6 @@
 # ADR 0004: Human-readable logs in development, ECS JSON logs in production
 
-- **Status:** Accepted
+- **Status:** Accepted; extended by [ADR 0013](0013-request-correlation.md) (trace ID in every log line; ECS `trace.id`)
 - **Date:** 2026-11-20
 
 ## Context

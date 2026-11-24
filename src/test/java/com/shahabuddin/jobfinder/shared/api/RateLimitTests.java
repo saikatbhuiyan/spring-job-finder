@@ -56,7 +56,13 @@ class RateLimitTests {
                 .jsonPath("$.status").isEqualTo(429)
                 .jsonPath("$.title").isEqualTo("Too Many Requests")
                 .jsonPath("$.detail").value(detail -> assertThat((String) detail).startsWith("Too many requests. Retry after "))
-                .jsonPath("$.instance").isEqualTo("/api/v1/rate-probe");
+                .jsonPath("$.instance").isEqualTo("/api/v1/rate-probe")
+                // A rejected request is still traced (ADR 0013): the trace ID filter runs before this one.
+                .consumeWith(result -> {
+                    String traceId = result.getResponseHeaders().getFirst("X-Trace-Id");
+                    assertThat(traceId).matches("[0-9a-f]{32}");
+                    assertThat(new String(result.getResponseBodyContent())).contains("\"traceId\":\"" + traceId + "\"");
+                });
         assertThat(probe.calls).hasValue(3);
     }
 

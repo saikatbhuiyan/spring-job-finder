@@ -1,6 +1,6 @@
 # ADR 0003: RFC 9457 Problem Details for all API errors
 
-- **Status:** Accepted; implemented and extended by [ADR 0006](0006-global-exception-handling.md)
+- **Status:** Accepted; implemented and extended by [ADR 0006](0006-global-exception-handling.md); extended by [ADR 0013](0013-request-correlation.md) (`traceId` member)
 - **Date:** 2026-11-20
 
 ## Context

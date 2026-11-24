@@ -91,7 +91,7 @@ class PaginationTests {
 
     @Test
     void nonNumbersAreInvalidTypesWithoutEchoingTheValue() {
-        client.get().uri("/api/v1/paging-probe/echo?page=abc&size=x")
+        client.get().uri("/api/v1/paging-probe/echo?page=xyz&size=x")
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectBody()
@@ -100,7 +100,8 @@ class PaginationTests {
                 .jsonPath("$.errors[0].code").isEqualTo("InvalidType")
                 .jsonPath("$.errors[1].parameter").isEqualTo("size")
                 .jsonPath("$.errors[1].code").isEqualTo("InvalidType")
-                .consumeWith(result -> assertThat(new String(result.getResponseBodyContent())).doesNotContain("abc"));
+                // "xyz", not a hex-only value: the body's random traceId must not match it by chance.
+                .consumeWith(result -> assertThat(new String(result.getResponseBodyContent())).doesNotContain("xyz"));
     }
 
     @ParameterizedTest(name = "page={0}&size=100")
