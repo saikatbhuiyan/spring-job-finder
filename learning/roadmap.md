@@ -58,7 +58,7 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | 🔜 | Spring Security + JWT | Job seekers and employers log in |
 | ✅ | Testing a REST API: every kind of test, `@WebMvcTest`/`@JsonTest` slices, `@SpringBootTest` over real HTTP, JaCoCo coverage floor, PIT mutation testing ([note 40](40-testing-rest-apis.md), [ADR 0015](../docs/adr/0015-testing-strategy.md)) | Every layer tested at the right level |
 | 🔜 | Integration testing against PostgreSQL: `@DataJpaTest` + Testcontainers, Failsafe for `*IT` | Tests against a real DB |
-| 🔜 | API docs with OpenAPI / Swagger UI | Portfolio-friendly API explorer |
+| ✅ | API docs with OpenAPI / Swagger UI: springdoc-openapi, corrected to the real contract, dev only, `docs/openapi.yaml` as the published contract ([note 41](41-openapi-documentation.md), [ADR 0016](../docs/adr/0016-openapi-documentation.md)) | Portfolio-friendly API explorer |
 | 🔜 | Docker + docker-compose | One-command local run |
 | 🔜 | CI with GitHub Actions | Build and test on every push |
 
