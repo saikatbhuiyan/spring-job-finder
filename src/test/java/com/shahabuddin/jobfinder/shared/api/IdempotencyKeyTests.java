@@ -36,9 +36,22 @@ class IdempotencyKeyTests {
             "\"8e03978e-40d5-43e8-bc93-6894a57f93é4\"",        // not ASCII
             "\"8e03978e-40d5-43e8-bc93-6894a57f\t9324\"",      // control character
             "8e03978e 40d5 43e8 bc93 6894a57f9324",            // bare with spaces
-            "8e03978e-40d5-43e8-bc93-6894a57f9324,next"})      // bare list
+            "8e03978e-40d5-43e8-bc93-6894a57f9324,next",       // bare list
+            // Just outside each allowed range of a bare key: ` { @ [
+            "0123456789abcde`", "0123456789abcde{", "0123456789abcde@", "0123456789abcde[",
+            // Just outside the printable range of a quoted key: 0x1F, 0x7F
+            "\"0123456789abcde\u001F\"", "\"0123456789abcde\u007F\""})
     void invalidKeys(String header) {
         assertThat(IdempotencyKey.parse(header)).isNull();
+    }
+
+    /** Found by mutation testing: no key used the first or last character of an allowed range. */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "azAZ09-_.~:+/=az",          // a bare key of exactly 16 characters, every range boundary
+            "\" ~ ~ ~ ~ ~ ~ ~ ~\""})       // quoted: space (0x20) and ~ (0x7E), the printable boundaries
+    void boundaryCharactersAreValid(String header) {
+        assertThat(IdempotencyKey.parse(header)).isNotNull();
     }
 
     @ParameterizedTest

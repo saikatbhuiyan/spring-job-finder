@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
@@ -25,6 +26,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -78,6 +80,7 @@ class IdempotencyTests {
         String key = newKey();
         int before = orders.created.get();
         double replayedBefore = outcomes("replayed");
+        double executedBefore = outcomes("executed");
 
         EntityExchangeResult<byte[]> first = post("/orders", key, BOOK).expectStatus().isCreated().expectBody().returnResult();
         EntityExchangeResult<byte[]> retry = post("/orders", key, BOOK).expectStatus().isCreated().expectBody().returnResult();
@@ -90,7 +93,22 @@ class IdempotencyTests {
         assertThat(retry.getResponseHeaders().getFirst("Idempotent-Replayed")).isEqualTo("true");
         // The retry is its own request: its own trace ID, not the stored one.
         assertThat(retry.getResponseHeaders().getFirst("X-Trace-Id")).isNotEqualTo(first.getResponseHeaders().getFirst("X-Trace-Id"));
+        // (Tomcat adds Content-Length itself to a response that fits its 8 KB buffer, so this also
+        // passes without the filter's setContentLength: that call matters for larger responses.)
+        assertThat(retry.getResponseHeaders().getContentLength()).isEqualTo(first.getResponseBodyContent().length);
+        // The metric of ADR 0014, one outcome per request (found by mutation testing: none but "replayed" was checked).
         assertThat(outcomes("replayed") - replayedBefore).isOne();
+        assertThat(outcomes("executed") - executedBefore).isOne();
+    }
+
+    @Test
+    void theQueryStringIsPartOfTheRequest() {
+        // Found by mutation testing: dropping the query from the fingerprint went unnoticed.
+        String key = newKey();
+        post("/orders?channel=app", key, BOOK).expectStatus().isCreated();
+
+        post("/orders?channel=web", key, BOOK).expectStatus().isEqualTo(422);
+        post("/orders?channel=app", key, BOOK).expectStatus().isCreated().expectHeader().valueEquals("Idempotent-Replayed", "true");
     }
 
     @Test
@@ -98,6 +116,7 @@ class IdempotencyTests {
         String key = newKey();
         post("/orders", key, BOOK).expectStatus().isCreated();
         int before = orders.created.get();
+        double reusedBefore = outcomes("key_reused");
 
         for (var other : List.of(new String[]{"/orders", "{\"item\":\"pen\"}"}, new String[]{"/notes", BOOK})) {
             post(other[0], key, other[1])
@@ -110,6 +129,7 @@ class IdempotencyTests {
                     .jsonPath("$.traceId").isNotEmpty();
         }
         assertThat(orders.created.get()).isEqualTo(before);
+        assertThat(outcomes("key_reused") - reusedBefore).isEqualTo(2);
     }
 
     @Test
@@ -176,6 +196,7 @@ class IdempotencyTests {
         orders.slowStarted = new CountDownLatch(1);
         orders.slowMayFinish = new CountDownLatch(1);
         int before = orders.created.get();
+        double inProgressBefore = outcomes("in_progress");
 
         CompletableFuture<Integer> first = CompletableFuture.supplyAsync(() ->
                 post("/slow-orders", key, BOOK).returnResult().getStatus().value());
@@ -186,6 +207,7 @@ class IdempotencyTests {
                 .expectHeader().valueEquals("Retry-After", "1")
                 .expectBody()
                 .jsonPath("$.type").isEqualTo(DOCS + "request-in-progress");
+        assertThat(outcomes("in_progress") - inProgressBefore).isOne();
 
         orders.slowMayFinish.countDown();
         assertThat(first.get(10, TimeUnit.SECONDS)).isEqualTo(201);
@@ -275,6 +297,7 @@ class IdempotencyTests {
         // The body is buffered to fingerprint it (limit 1KB in this test).
         String large = "{\"item\":\"" + "x".repeat(2048) + "\"}";
         int before = orders.created.get();
+        double tooLargeBefore = outcomes("too_large");
 
         post("/orders", newKey(), large)
                 .expectStatus().isEqualTo(413)
@@ -282,6 +305,27 @@ class IdempotencyTests {
                 .expectBody()
                 .jsonPath("$.title").isEqualTo("Content Too Large");
         assertThat(orders.created.get()).isEqualTo(before);
+        assertThat(outcomes("too_large") - tooLargeBefore).isOne();
+    }
+
+    /** Found by mutation testing: {@code >} vs {@code >=} at the limit went unnoticed, for both ways of sending a body. */
+    @ParameterizedTest(name = "{0} bytes, chunked={1}")
+    @CsvSource({"1024, false, 201", "1025, false, 413", "1024, true, 201", "1025, true, 413"})
+    void theLimitIsInclusive(int bytes, boolean chunked, int status) throws Exception {
+        byte[] body = ("{\"item\":\"" + "x".repeat(bytes - 11) + "\"}").getBytes(StandardCharsets.UTF_8);
+        assertThat(body).hasSize(bytes);
+        try (HttpClient http = HttpClient.newHttpClient()) {
+            HttpResponse<String> response = http.send(HttpRequest.newBuilder(
+                            URI.create("http://localhost:" + port + "/api/v1/idempotency-probe/orders"))
+                    .header("Content-Type", "application/json")
+                    .header("Idempotency-Key", newKey())
+                    .POST(chunked
+                            ? HttpRequest.BodyPublishers.ofInputStream(() -> new ByteArrayInputStream(body))
+                            : HttpRequest.BodyPublishers.ofByteArray(body))
+                    .build(), HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.statusCode()).isEqualTo(status);
+        }
     }
 
     @Test
@@ -371,7 +415,8 @@ class IdempotencyTests {
 
         @Idempotent
         @PostMapping(path = "/orders", version = "1")
-        ResponseEntity<OrderResponse> create(@Valid @RequestBody OrderRequest request) {
+        ResponseEntity<OrderResponse> create(@Valid @RequestBody OrderRequest request,
+                                             @RequestParam(required = false) String channel) {
             if (failuresLeft.getAndUpdate(n -> Math.max(0, n - 1)) > 0) {
                 throw new IllegalStateException("database unavailable");
             }

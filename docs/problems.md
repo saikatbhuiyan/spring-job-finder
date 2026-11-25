@@ -28,6 +28,10 @@ A `500` never contains internal details: `"detail": "An unexpected error occurre
 A `429 Too Many Requests` (rate limit exceeded) carries a `Retry-After` header: the number of seconds to
 wait before retrying.
 
+A `400 Bad Request` without a `type` means the request couldn't be read at all, before validation: for
+example a query string that isn't valid percent-encoded UTF-8 (`?q=%zz`), a value without a parameter
+name (`?=x`), or more than 1,000 parameters.
+
 The types defined by this API are listed below. Their URIs are part of the API contract and never change.
 
 ## validation-error

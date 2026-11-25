@@ -1,0 +1,4 @@
+# Application configuration that every slice using JSON (@WebMvcTest, @JsonTest, ...) must include,
+# because slices do not component-scan @Configuration classes (docs/adr/0015-testing-strategy.md).
+# JsonBindingConfig: strict JSON types (ADR 0009). Without it a slice accepted 123 as "123".
+com.shahabuddin.jobfinder.shared.api.JsonBindingConfig

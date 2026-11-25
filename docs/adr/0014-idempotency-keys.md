@@ -1,6 +1,6 @@
 # ADR 0014: Idempotency keys
 
-- **Status:** Accepted
+- **Status:** Accepted; extended by [ADR 0015](0015-testing-strategy.md) (the key interceptor registered apart from the filter, so controller slice tests can start)
 - **Date:** 2026-11-24
 - **Extends:** [ADR 0003](0003-problem-details-for-errors.md) (two problem types),
   [ADR 0007](0007-cors-policy.md) (`Idempotency-Key` allowed, `Idempotent-Replayed` exposed)

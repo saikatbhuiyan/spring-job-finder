@@ -8,8 +8,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -19,10 +17,15 @@ import tools.jackson.databind.json.JsonMapper;
  * rejected request must not claim a key), and after Spring Security once it is added (its chain runs at
  * {@code -100}): the key will be scoped by the authenticated user, and an unauthenticated request must
  * not reach the store at all.
+ *
+ * <p>Deliberately <b>not</b> a {@code WebMvcConfigurer}: {@code @WebMvcTest} slices include every
+ * {@code WebMvcConfigurer} with all its beans, and the filter's {@code MeterRegistry} isn't part of the
+ * MVC slice, so every controller slice test in the application failed to start (verified). The key
+ * interceptor, which belongs to Spring MVC, is registered by {@link IdempotencyKeyConfig}.
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(IdempotencyProperties.class)
-class IdempotencyConfig implements WebMvcConfigurer {
+class IdempotencyConfig {
 
     static final int ORDER = 0;
 
@@ -44,10 +47,5 @@ class IdempotencyConfig implements WebMvcConfigurer {
         registration.addUrlPatterns("/api/*");
         registration.setOrder(ORDER);
         return registration;
-    }
-
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new IdempotencyKeyInterceptor()).addPathPatterns("/api/**");
     }
 }

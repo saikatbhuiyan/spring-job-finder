@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import org.springframework.web.bind.annotation.BindParam;
@@ -21,10 +22,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Locks in the filtering contract of docs/adr/0011-filtering-and-search.md over real HTTP: unknown
@@ -40,6 +49,9 @@ class FilteringTests {
 
     @Autowired
     private RestTestClient client;
+
+    @LocalServerPort
+    private int port;
 
     // --- Unknown parameters ----------------------------------------------------------------------
 
@@ -103,7 +115,41 @@ class FilteringTests {
 
     @Test
     void anEndpointTakingAllParametersAsAMapAcceptsAnyName() {
-        client.get().uri("/api/v1/filter-probe/raw?anything=1&else=2").exchange().expectStatus().isOk();
+        // The body proves the handler ran: an interceptor that stopped the request (preHandle returning
+        // false) also answered 200, with an empty body (found by mutation testing).
+        client.get().uri("/api/v1/filter-probe/raw?anything=1&else=2").exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("anything,else");
+    }
+
+    /**
+     * Query strings Tomcat can't parse were answered as a logged {@code 500} ("An unexpected error
+     * occurred"): Tomcat throws when Spring MVC binds the first parameter (found while testing, ADR 0015).
+     * Sent over a raw socket: Java's HTTP clients refuse to send most of these URIs at all.
+     */
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            a value without a name     | named?=x&q=java
+            broken percent-encoding    | named?q=%zz
+            a lone percent sign        | named?q=%
+            percent-encoded non-UTF-8  | named?q=%E9
+            """)
+    void unparseableQueryStringsAre400(String name, String pathAndQuery) throws Exception {
+        String response = rawGet("/api/v1/filter-probe/" + pathAndQuery);
+
+        assertThat(response).startsWith("HTTP/1.1 400 ")
+                .contains("\"detail\":\"The request's parameters could not be parsed.\"")
+                .contains("\"traceId\":")
+                // Tomcat's own message ("Invalid chunk ... with a value of [=x] ignored") quotes the raw input.
+                .doesNotContain("Invalid chunk");
+    }
+
+    @Test
+    void tooManyParametersIs400() throws Exception {
+        // Tomcat's limit (server.tomcat.max-parameter-count, 1000) protects against hash-flooding.
+        String parameters = IntStream.range(0, 1001).mapToObj(i -> "p" + i + "=1").collect(Collectors.joining("&"));
+
+        assertThat(rawGet("/api/v1/filter-probe/raw?" + parameters)).startsWith("HTTP/1.1 400 ");
     }
 
     @Test
@@ -173,6 +219,15 @@ class FilteringTests {
                 .jsonPath("$.filter.location").isEqualTo(List.of("DHAKA", "REMOTE"));
     }
 
+    /** One HTTP/1.1 request, sent byte for byte as given: the status line, headers and body. */
+    private String rawGet(String pathAndQuery) throws IOException {
+        try (Socket socket = new Socket("localhost", port)) {
+            socket.getOutputStream().write(("GET " + pathAndQuery + " HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+                    .getBytes(StandardCharsets.ISO_8859_1));
+            return new String(socket.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
     // --- Test-only endpoints -------------------------------------------------------------------
 
     enum Status { OPEN, CLOSED }
@@ -224,7 +279,7 @@ class FilteringTests {
 
         @GetMapping(path = "/raw", version = "1")
         String raw(@RequestParam Map<String, String> parameters) {
-            return "ok";
+            return String.join(",", new TreeSet<>(parameters.keySet()));
         }
     }
 }

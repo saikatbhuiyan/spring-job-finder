@@ -86,7 +86,9 @@ class InMemoryIdempotencyStoreTests {
             small.complete(started(small.begin("done-" + i, "fp")), large);
         }
 
-        assertThat(small.storedResponses()).isLessThan(10);
+        // Both bounds: "fewer than 10" alone also passed when the count was broken and always 0
+        // (found by mutation testing).
+        assertThat(small.storedResponses()).isBetween(1L, 9L);
         // Evicting it would let a concurrent duplicate of the running request execute.
         assertThat(small.begin("running", "fp")).isInstanceOf(Outcome.InProgress.class);
         small.release(running);

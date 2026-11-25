@@ -117,6 +117,17 @@ class PaginationTests {
                 .jsonPath("$.errors[0].detail").isEqualTo("is too deep: page × size must not exceed 10000; narrow the search instead");
     }
 
+    /** Found by mutation testing: no test used size=1, so {@code size < 1} vs {@code size <= 1} went unnoticed. */
+    @ParameterizedTest(name = "size={0}")
+    @ValueSource(ints = {1, 100})
+    void theSmallestAndLargestPageSizesAreAccepted(int size) {
+        client.get().uri("/api/v1/paging-probe/echo?page=0&size=" + size)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.size").isEqualTo(size);
+    }
+
     @Test
     void theDeepestAllowedPageIsAccepted() {
         client.get().uri("/api/v1/paging-probe/echo?page=100&size=100")

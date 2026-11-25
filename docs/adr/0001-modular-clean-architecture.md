@@ -1,6 +1,6 @@
 # ADR 0001: Modular monolith with clean layers inside each module
 
-- **Status:** Accepted
+- **Status:** Accepted; extended by [ADR 0015](0015-testing-strategy.md) (how each layer is tested)
 - **Date:** 2026-11-20
 
 ## Context

@@ -5,6 +5,7 @@ import com.shahabuddin.jobfinder.shared.DomainException;
 import com.shahabuddin.jobfinder.shared.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.tomcat.util.http.InvalidParameterException;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,6 +105,24 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(InvalidRequestParametersException.class)
     ResponseEntity<Object> handleInvalidRequestParameters(InvalidRequestParametersException ex, WebRequest request) {
         return validationProblem(ex, ex.violations(), new HttpHeaders(), request);
+    }
+
+    /**
+     * The query string (or form body) couldn't be parsed: a parameter without a name ({@code ?=x}),
+     * broken percent-encoding ({@code ?q=%zz}), too many parameters. Tomcat throws this from
+     * {@code getParameter...} when Spring MVC binds the first parameter, and it was answered as a
+     * logged {@code 500} (found while testing, ADR 0015). The client's fault, so a {@code 4xx}
+     * (Tomcat's own code when it gives one), without Tomcat's message: it echoes the raw input.
+     */
+    @ExceptionHandler(InvalidParameterException.class)
+    ResponseEntity<Object> handleUnparseableParameters(InvalidParameterException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.resolve(ex.getErrorCode());
+        if (status == null || !status.is4xxClientError()) {
+            status = HttpStatus.BAD_REQUEST;
+        }
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, "The request's parameters could not be parsed.");
+        log.debug("Unparseable request parameters ({}): {}", status.value(), ex.getMessage());
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
     }
 
     // --- Everything else: bugs and infrastructure failures ------------------------------------

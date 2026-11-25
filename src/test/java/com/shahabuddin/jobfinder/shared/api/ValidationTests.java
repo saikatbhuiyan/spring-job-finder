@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import org.junit.jupiter.api.Test;
@@ -22,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -33,6 +36,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -190,6 +194,73 @@ class ValidationTests {
     }
 
     @Test
+    void constraintOnAPathVariableIsReportedAsAParameter() {
+        // Never exercised before (found by mutation testing): the commonest constraint in a REST API.
+        client.get().uri("/api/v1/validation-probe/postings/0")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.type").isEqualTo(VALIDATION_ERROR)
+                .jsonPath("$.errors.length()").isEqualTo(1)
+                .jsonPath("$.errors[0].parameter").isEqualTo("id")
+                .jsonPath("$.errors[0].code").isEqualTo("Positive")
+                .jsonPath("$.errors[0].detail").isEqualTo("must be greater than 0");
+    }
+
+    @Test
+    void constraintOnAHeaderIsReportedWithTheHeaderName() {
+        client.get().uri("/api/v1/validation-probe/client-version").header("X-Client-Version", "latest")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.type").isEqualTo(VALIDATION_ERROR)
+                .jsonPath("$.errors.length()").isEqualTo(1)
+                .jsonPath("$.errors[0].parameter").isEqualTo("X-Client-Version")
+                .jsonPath("$.errors[0].code").isEqualTo("Pattern")
+                .consumeWith(result -> assertThat(new String(result.getResponseBodyContent())).doesNotContain("latest"));
+    }
+
+    @Test
+    void bodyAndParameterErrorsTogetherKeepTheirOwnLocations() {
+        // With a constraint on a parameter, Spring validates the whole method at once and reports the
+        // body's errors through the same exception: they must still be body pointers.
+        client.post().uri("/api/v1/validation-probe/postings/0/copies").contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"title": "", "salary": {"min": 1, "max": 2}}""")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.type").isEqualTo(VALIDATION_ERROR)
+                .jsonPath("$.errors.length()").isEqualTo(2)
+                .jsonPath("$.errors[0].parameter").isEqualTo("id")
+                .jsonPath("$.errors[0].code").isEqualTo("Positive")
+                .jsonPath("$.errors[1].pointer").isEqualTo("#/title")
+                .jsonPath("$.errors[1].code").isEqualTo("NotBlank");
+    }
+
+    /**
+     * A constraint on the body's class reports at the object itself (a "global" error), the default for
+     * class-level constraints. Never exercised before (found by mutation testing), by either path.
+     */
+    @ParameterizedTest(name = "{0}")
+    @CsvSource({
+            "body only (MethodArgumentNotValidException), /api/v1/validation-probe/periods",
+            "body and a parameter constraint (HandlerMethodValidationException), /api/v1/validation-probe/periods/1"})
+    void constraintOnTheWholeBodyIsReportedAtTheRoot(String name, String uri) {
+        client.post().uri(uri).contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"from": "2026-01-01"}""")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.type").isEqualTo(VALIDATION_ERROR)
+                .jsonPath("$.errors.length()").isEqualTo(1)
+                .jsonPath("$.errors[0].pointer").isEqualTo("#")
+                .jsonPath("$.errors[0].code").isEqualTo("CompletePeriod")
+                .jsonPath("$.errors[0].detail").isEqualTo("from and to must be given together");
+    }
+
+    @Test
     void missingRequiredHeaderIsAValidationError() {
         client.get().uri("/api/v1/validation-probe/search?q=java")
                 .exchange()
@@ -242,6 +313,29 @@ class ValidationTests {
     }
 
     record TitleRequest(String title) {
+    }
+
+    @CompletePeriod
+    record PeriodRequest(LocalDate from, LocalDate to) {
+    }
+
+    /** A class-level constraint that reports at the object (no property node): a global error. */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
+    @Constraint(validatedBy = CompletePeriodValidator.class)
+    @interface CompletePeriod {
+        String message() default "from and to must be given together";
+
+        Class<?>[] groups() default {};
+
+        Class<? extends Payload>[] payload() default {};
+    }
+
+    static class CompletePeriodValidator implements ConstraintValidator<CompletePeriod, PeriodRequest> {
+        @Override
+        public boolean isValid(PeriodRequest period, ConstraintValidatorContext context) {
+            return (period.from() == null) == (period.to() == null);
+        }
     }
 
     /** Search filters bound from query parameters (an implicit {@code @ModelAttribute}). */
@@ -324,6 +418,31 @@ class ValidationTests {
 
         @GetMapping(path = "/filter", version = "1")
         String filter(@Valid SalaryFilter filter) {
+            return "ok";
+        }
+
+        @GetMapping(path = "/postings/{id}", version = "1")
+        String posting(@PathVariable @Positive long id) {
+            return "ok";
+        }
+
+        @GetMapping(path = "/client-version", version = "1")
+        String clientVersion(@RequestHeader("X-Client-Version") @Pattern(regexp = "\\d+\\.\\d+") String version) {
+            return "ok";
+        }
+
+        @PostMapping(path = "/periods", version = "1")
+        String period(@Valid @RequestBody PeriodRequest request) {
+            return "ok";
+        }
+
+        @PostMapping(path = "/periods/{id}", version = "1")
+        String periodOf(@PathVariable @Positive long id, @Valid @RequestBody PeriodRequest request) {
+            return "ok";
+        }
+
+        @PostMapping(path = "/postings/{id}/copies", version = "1")
+        String copy(@PathVariable @Positive long id, @Valid @RequestBody PostingRequest request) {
             return "ok";
         }
 

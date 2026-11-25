@@ -43,7 +43,9 @@ class RateLimitFilterTests {
         for (int i = 0; i < 5_000; i++) {
             status(filter, "2001:db8::" + Integer.toHexString(i));
         }
-        assertThat(filter.trackedClients()).isLessThanOrEqualTo(100);
+        // Both bounds: "at most 100" alone also passed when the count was broken and always 0
+        // (found by mutation testing).
+        assertThat(filter.trackedClients()).isBetween(1L, 100L);
     }
 
     private static int status(RateLimitFilter filter, String address) throws Exception {

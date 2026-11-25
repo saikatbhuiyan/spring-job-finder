@@ -13,6 +13,7 @@ small, must be what a senior engineer would approve for production.
 - Jackson **3** (package `tools.jackson`, not `com.fasterxml.jackson`), JUnit **6**
 - Spring Modulith 2.2 + ArchUnit 1.5.1 (architecture enforced in tests), Bucket4j + Caffeine (rate limiting),
   Micrometer Tracing + OpenTelemetry bridge (trace IDs; no exporter yet)
+- Tests: JUnit 6, AssertJ, Mockito (declared agent), JaCoCo (coverage floor), PIT (mutation testing)
 - Maven 3.9+ (no wrapper; use `mvn`). Planned: Spring Data JPA, PostgreSQL + Flyway, Spring Security,
   Testcontainers, Docker, CI ([roadmap](learning/roadmap.md)).
 
@@ -21,9 +22,11 @@ Base package: `com.shahabuddin.jobfinder`. Remote: `github.com/saikatbhuiyan/spr
 ## Commands
 
 ```bash
-mvn -q test                                   # full suite: ~220 tests, ~20 s. Must pass before any change is done
+mvn -q test                                   # full suite: ~260 tests, ~20 s. Must pass before any change is done
 mvn -q test -Dtest=RateLimitTests             # one test class
 mvn -q test -Dtest='ArchitectureTests,ModularityTests'   # architecture rules only
+mvn verify                                    # + JaCoCo report and coverage floor (90 % lines, 80 % branches)
+mvn clean -Pmutation verify                   # + PIT mutation testing, ~3 min (target/pit-reports/index.html)
 mvn spring-boot:run                           # dev profile, http://localhost:8080
 curl -s localhost:8080/actuator/health
 mvn clean package && SPRING_PROFILES_ACTIVE=prod java -jar target/job-finder-0.0.1-SNAPSHOT.jar
@@ -102,10 +105,32 @@ Read the relevant ADR before touching its area. Behavior they describe is locked
 
 ## Testing conventions
 
-- Every behavior gets a test; HTTP behavior is tested over real HTTP:
-  `@SpringBootTest(webEnvironment = RANDOM_PORT)` + `@AutoConfigureRestTestClient` + `RestTestClient`.
+Use the lowest kind of test that can see the behavior ([ADR 0015](docs/adr/0015-testing-strategy.md)):
+
+| What | Test |
+| --- | --- |
+| Domain rules, value objects, parsers | Plain JUnit, no Spring; fakes over mocks; inject a `Clock`/`Ticker` |
+| Use cases | Mockito unit test, ports mocked |
+| `@ConfigurationProperties`, conditional beans | `ApplicationContextRunner` |
+| DTO wire format | `@JsonTest` + `JacksonTester` |
+| Each controller | `@WebMvcTest` + `MockMvcTester` + `@MockitoBean` use case (template: `WebMvcSliceTests`) |
+| Filters, error controller, CORS, cross-cutting contracts, end-to-end | `@SpringBootTest(webEnvironment = RANDOM_PORT)` + `@AutoConfigureRestTestClient` + `RestTestClient` |
+| Repositories (with PostgreSQL) | `@DataJpaTest` + Testcontainers `@ServiceConnection`; never H2 |
+
+- Never mock values or types we don't own (`JdbcTemplate`, `HttpClient`); `@MockBean` doesn't exist in Boot 4
+  (`@MockitoBean`).
+- Slices must run the application's API contract. A `WebMvcConfigurer` holds Spring MVC configuration
+  only (filters and their beans go in a separate `@Configuration`, or every `@WebMvcTest` fails). An
+  application-wide Jackson/MVC setting slices don't scan goes into
+  `src/test/resources/META-INF/spring/org.springframework.boot.test.autoconfigure.json.AutoConfigureJson.imports`.
+- Assert the outcome, not just the status: a request stopped by an interceptor is also a `200`. Test
+  boundaries (`size=1`, `100`, the limit and limit + 1). Assert counters as deltas, and bounds from both sides.
 - Tests that lock in an ADR say so in their Javadoc. For guard tests, do a **mutation check**: break the
-  guarded code, confirm the test fails, restore it.
+  guarded code, confirm the test fails, restore it. For changes to guard code (filters, validation,
+  parsers), also run `mvn clean -Pmutation verify` and triage every survivor in the changed classes: add the
+  missing test, or confirm it's equivalent or a false survivor (PIT reuses Spring's cached contexts, so
+  results cached per handler or recorded meters can hide a mutant: apply it by hand to be sure).
+- Never lower the JaCoCo floor to pass; raise it when coverage rises.
 - Wait for async outcomes with Awaitility, never `Thread.sleep`.
 - Test-only property overrides go in `src/test/resources/config/application.properties` (layered on top
   of the main file). The rate limit is raised there; `RateLimitTests` sets its own small limit.
