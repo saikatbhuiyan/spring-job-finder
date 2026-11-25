@@ -24,7 +24,7 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | 🧪 | Eager vs lazy initialization: `@Lazy` | [Note 14](14-eager-and-lazy-instantiation.md) |
 | 🔜 | Externalised configuration: `@PropertySource`, `@Value` | Keeping settings out of code |
 | 🔜 | AOP basics: `@Aspect`, `@Before`, `@Around` | Cross-cutting concerns such as logging and timing |
-| 🔜 | Unit testing with JUnit 5 | `mvn test`, assertions |
+| ✅ | Unit testing with JUnit (6) | `mvn test`, AssertJ, parameterized tests, fakes and Mockito: [note 40 §3.1–3.2](40-testing-rest-apis.md) |
 
 ## Phase 2: Spring Boot
 
@@ -56,7 +56,8 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | 🔜 | Schema migrations with Flyway | Versioned database changes |
 | 🧪 | Search, filtering, pagination: pagination and sorting contract ✅ ([note 35](35-pagination-and-sorting.md), [ADR 0010](../docs/adr/0010-pagination-and-sorting.md)); filtering and search API contract ✅, database side decided ([note 36](36-filtering-and-search.md), [ADR 0011](../docs/adr/0011-filtering-and-search.md)); queries come with the Job module 🔜 | Search jobs by title, location, salary |
 | 🔜 | Spring Security + JWT | Job seekers and employers log in |
-| 🔜 | Integration testing: `@SpringBootTest`, Testcontainers | Tests against a real DB |
+| ✅ | Testing a REST API: every kind of test, `@WebMvcTest`/`@JsonTest` slices, `@SpringBootTest` over real HTTP, JaCoCo coverage floor, PIT mutation testing ([note 40](40-testing-rest-apis.md), [ADR 0015](../docs/adr/0015-testing-strategy.md)) | Every layer tested at the right level |
+| 🔜 | Integration testing against PostgreSQL: `@DataJpaTest` + Testcontainers, Failsafe for `*IT` | Tests against a real DB |
 | 🔜 | API docs with OpenAPI / Swagger UI | Portfolio-friendly API explorer |
 | 🔜 | Docker + docker-compose | One-command local run |
 | 🔜 | CI with GitHub Actions | Build and test on every push |
