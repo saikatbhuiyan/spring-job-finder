@@ -12,7 +12,7 @@ small, must be what a senior engineer would approve for production.
 - Java **25**, Spring Boot **4.2** (Spring Framework 7.1), Spring MVC, Bean Validation, Actuator
 - Jackson **3** (package `tools.jackson`, not `com.fasterxml.jackson`), JUnit **6**
 - Spring Modulith 2.2 + ArchUnit 1.5.1 (architecture enforced in tests), Bucket4j + Caffeine (rate limiting),
-  Micrometer Tracing + OpenTelemetry bridge (trace IDs; no exporter yet)
+  Micrometer Tracing + OpenTelemetry bridge (trace IDs; no exporter yet), springdoc-openapi 3.2 (OpenAPI docs)
 - Tests: JUnit 6, AssertJ, Mockito (declared agent), JaCoCo (coverage floor), PIT (mutation testing)
 - Maven 3.9+ (no wrapper; use `mvn`). Planned: Spring Data JPA, PostgreSQL + Flyway, Spring Security,
   Testcontainers, Docker, CI ([roadmap](learning/roadmap.md)).
@@ -22,12 +22,13 @@ Base package: `com.shahabuddin.jobfinder`. Remote: `github.com/saikatbhuiyan/spr
 ## Commands
 
 ```bash
-mvn -q test                                   # full suite: ~260 tests, ~20 s. Must pass before any change is done
+mvn -q test                                   # full suite: ~275 tests, ~25 s. Must pass before any change is done
 mvn -q test -Dtest=RateLimitTests             # one test class
 mvn -q test -Dtest='ArchitectureTests,ModularityTests'   # architecture rules only
 mvn verify                                    # + JaCoCo report and coverage floor (90 % lines, 80 % branches)
 mvn clean -Pmutation verify                   # + PIT mutation testing, ~3 min (target/pit-reports/index.html)
-mvn spring-boot:run                           # dev profile, http://localhost:8080
+mvn test -Dtest=OpenApiDocumentTests -Dopenapi.update=true   # regenerate docs/openapi.yaml after an API change
+mvn spring-boot:run                           # dev profile, http://localhost:8080 (Swagger UI: /swagger-ui.html)
 curl -s localhost:8080/actuator/health
 mvn clean package && SPRING_PROFILES_ACTIVE=prod java -jar target/job-finder-0.0.1-SNAPSHOT.jar
 ```
@@ -85,6 +86,7 @@ on bad code (`ArchitectureRulesTests`, `ModularityRulesTests`).
 | Rate limiting | Token bucket per `getRemoteAddr()` on `/api/**`; 429 + `Retry-After`; never read `X-Forwarded-For` in code | [0012](docs/adr/0012-rate-limiting.md) |
 | Correlation | The W3C trace ID is the correlation ID: `X-Trace-Id` header + `traceId` in every problem; never a hand-rolled request ID or MDC key; W3C propagation only, no baggage; use Boot's executors and `RestClient.Builder` so the trace propagates | [0013](docs/adr/0013-request-correlation.md) |
 | Idempotency | Create-like `POST`/`PATCH` endpoints get `@Idempotent` (key required); any keyed `POST`/`PATCH` is replayed, never re-executed; only 2xx stored; new error types documented in docs/problems.md | [0014](docs/adr/0014-idempotency-keys.md) |
+| API docs | Code-first (springdoc); cross-cutting parts come from `OpenApiConfig`, never repeated in controllers. Controllers add `@Tag`, `@Operation(summary)`, the success status of a `ResponseEntity` (`@ApiResponse(responseCode = "201", headers = @Header(name = "Location"))`) and their business errors (`@ApiResponse(responseCode = "404", ref = "NotFound")`). Docs off outside `dev`; regenerate and commit `docs/openapi.yaml` with every API change; bodies JSON only | [0016](docs/adr/0016-openapi-documentation.md) |
 | CORS | Per-environment allowlist (`jobfinder.cors.allowed-origins`), none by default | [0007](docs/adr/0007-cors-policy.md) |
 | Logging | Readable in `dev`, ECS JSON in `prod` | [0004](docs/adr/0004-logging-per-environment.md) |
 
@@ -93,6 +95,9 @@ Read the relevant ADR before touching its area. Behavior they describe is locked
 ## Code conventions
 
 - Match the existing code before inventing a pattern. Look at `shared/` first.
+- A `WebMvcConfigurer` holds Spring MVC configuration only; a library's `@ControllerAdvice` can't take over
+  errors (`GlobalExceptionHandler` is `@Order(HIGHEST_PRECEDENCE)`). After adding a library, check what it
+  registers: springdoc brought its own advice and a YAML body converter (ADR 0016).
 - Configuration: `@ConfigurationProperties` **records** under the `jobfinder.*` prefix, validated at
   startup (fail fast on bad config). Every property in `application*.properties` gets a comment
   explaining *why*, with the ADR it implements.

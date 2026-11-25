@@ -32,6 +32,12 @@ A `400 Bad Request` without a `type` means the request couldn't be read at all, 
 example a query string that isn't valid percent-encoded UTF-8 (`?q=%zz`), a value without a parameter
 name (`?=x`), or more than 1,000 parameters.
 
+Bodies are JSON only: a request body in another format is a `415 Unsupported Media Type`, and an `Accept`
+header that excludes JSON a `406 Not Acceptable`.
+
+The OpenAPI description of every operation, these responses included, is
+[`openapi.yaml`](openapi.yaml).
+
 The types defined by this API are listed below. Their URIs are part of the API contract and never change.
 
 ## validation-error

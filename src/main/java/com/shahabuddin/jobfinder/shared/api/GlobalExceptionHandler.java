@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.context.MessageSourceResolvable;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -75,10 +77,17 @@ import java.util.List;
  * catch-all would shadow a module's own advice (enforced by {@code ArchitectureRules}). Modules
  * report business failures as {@link DomainException}s instead.
  *
+ * <p>Ordered first explicitly: libraries can bring their own advice (springdoc-openapi registers one
+ * while the API docs are enabled, answering 404 with its own non-Problem body). Unordered, which one
+ * Spring asked first depended on bean registration order (measured: both at the lowest precedence).
+ * First, this class's catch-all makes every library advice unreachable, so there is one error policy
+ * (docs/adr/0016-openapi-documentation.md).
+ *
  * <p>Errors raised outside Spring MVC (filters, the servlet container) never reach this class;
  * {@link ProblemDetailsErrorController} covers those.
  */
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     static final String UNEXPECTED_ERROR_DETAIL = "An unexpected error occurred.";

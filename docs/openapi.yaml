@@ -1,0 +1,177 @@
+openapi: 3.1.0
+info:
+  description: |
+    Job-search REST API. Conventions that apply to every operation:
+
+    - **Errors** are RFC 9457 Problem Details (`application/problem+json`); compare on `type` ([catalogue](https://github.com/saikatbhuiyan/spring-job-finder/blob/main/docs/problems.md)). Every response carries the request's trace ID in `X-Trace-Id`, and every problem as `traceId`: quote it when reporting an error.
+    - **Unknown properties and query parameters are rejected** (`400`), so a typo is never silently ignored. JSON types are strict: `"5"` is not a number.
+    - **Rate limit**: over the limit, `429` with `Retry-After` (seconds).
+    - **Retries**: `POST`/`PATCH` accept an `Idempotency-Key`; a retry with the same key gets the first response again (`Idempotent-Replayed: true`).
+  title: Job Finder API
+  version: "1"
+servers:
+- url: /
+paths: {}
+components:
+  responses:
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: "The request is invalid: see `errors` for each field or parameter\
+        \ (`validation-error`), or the body isn't valid JSON (`malformed-request-body`)."
+      headers:
+        X-Trace-Id:
+          description: "The request's W3C trace ID, to find its log lines."
+          schema:
+            type: string
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: The request conflicts with the resource's state (`conflict`).
+      headers:
+        X-Trace-Id:
+          description: "The request's W3C trace ID, to find its log lines."
+          schema:
+            type: string
+    ContentTooLarge:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: A request body sent with an `Idempotency-Key` is larger than 1
+        MB.
+      headers:
+        X-Trace-Id:
+          description: "The request's W3C trace ID, to find its log lines."
+          schema:
+            type: string
+    IdempotencyKeyReused:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: The `Idempotency-Key` was already used for a different request
+        (`idempotency-key-reused`).
+      headers:
+        X-Trace-Id:
+          description: "The request's W3C trace ID, to find its log lines."
+          schema:
+            type: string
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: The resource doesn't exist (`resource-not-found`).
+      headers:
+        X-Trace-Id:
+          description: "The request's W3C trace ID, to find its log lines."
+          schema:
+            type: string
+    RequestInProgress:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: A request with this `Idempotency-Key` is still being processed
+        (`request-in-progress`); retry after `Retry-After` seconds.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+            format: int32
+        X-Trace-Id:
+          description: "The request's W3C trace ID, to find its log lines."
+          schema:
+            type: string
+    ServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: "An unexpected error. Nothing about the cause is revealed: report\
+        \ the `traceId`."
+      headers:
+        X-Trace-Id:
+          description: "The request's W3C trace ID, to find its log lines."
+          schema:
+            type: string
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: Too many requests from this client; retry after `Retry-After` seconds.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+            format: int32
+        X-Trace-Id:
+          description: "The request's W3C trace ID, to find its log lines."
+          schema:
+            type: string
+  schemas:
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details.
+      properties:
+        detail:
+          type: string
+          description: "This occurrence, safe to show to a user."
+        errors:
+          type: array
+          description: "Only in a `validation-error`: every invalid field or parameter."
+          items:
+            $ref: "#/components/schemas/Violation"
+        instance:
+          type: string
+          format: uri-reference
+          description: The request path.
+        status:
+          type: integer
+          format: int32
+          description: The HTTP status code.
+        title:
+          type: string
+          description: Short summary of the problem type.
+        traceId:
+          type: string
+          description: "The request's trace ID (also `X-Trace-Id`): quote it when\
+            \ reporting a problem."
+        type:
+          type: string
+          format: uri
+          description: "The problem type: compare on this. Absent for a generic HTTP\
+            \ error, where `status` says it all."
+      required:
+      - status
+      - title
+    Violation:
+      type: object
+      description: One invalid field or parameter. Exactly one of `pointer` and `parameter`
+        is present.
+      properties:
+        code:
+          type: string
+          description: "Stable, machine-readable: the constraint (`NotBlank`, `Size`,\
+            \ ...) or `InvalidType`, `UnknownProperty`, `UnknownParameter`, `Required`,\
+            \ `InvalidValue`."
+        detail:
+          type: string
+          description: English text for developers. The rejected value is never echoed.
+        parameter:
+          type: string
+          description: "Name of the query, path or header parameter."
+        pointer:
+          type: string
+          description: "JSON Pointer to the body field, e.g. `#/salary/min`."
+      required:
+      - code
+      - detail

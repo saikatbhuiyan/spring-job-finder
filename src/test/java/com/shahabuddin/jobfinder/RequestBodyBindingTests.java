@@ -54,6 +54,39 @@ class RequestBodyBindingTests {
                 .jsonPath("$.status").isEqualTo(400);
     }
 
+    /**
+     * Only Jackson 3, configured with the API's rules, reads and writes bodies. springdoc-openapi brings
+     * Jackson 2's YAML module, and Spring MVC registered a YAML converter for it: a YAML body was bound
+     * with none of the JSON rules (unknown properties ignored, {@code 123} accepted as a string) and
+     * answered {@code 200} (docs/adr/0016, shared/api/MessageConvertersConfig).
+     */
+    @Test
+    void aBodyInAnotherFormatIsRejectedNotBoundByAnotherMapper() {
+        client.post().uri("/api/v1/binding-probe")
+                .contentType(MediaType.parseMediaType("application/yaml"))
+                .body("""
+                        title: 123
+                        salary: 90000
+                        featured: true
+                        """)
+                .exchange()
+                .expectStatus().isEqualTo(415)
+                .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON);
+    }
+
+    @Test
+    void responsesAreJsonOnly() {
+        // A YAML response was written by Jackson 2, with dates as epoch numbers instead of ISO-8601.
+        client.post().uri("/api/v1/binding-probe")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.parseMediaType("application/yaml"))
+                .body("""
+                        {"title": "Java Developer", "salary": 90000}
+                        """)
+                .exchange()
+                .expectStatus().isEqualTo(406);
+    }
+
     @TestConfiguration
     static class BindingProbeConfig {
         @Bean

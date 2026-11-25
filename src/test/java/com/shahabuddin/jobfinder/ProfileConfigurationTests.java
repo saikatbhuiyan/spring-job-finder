@@ -60,6 +60,9 @@ class ProfileConfigurationTests {
             });
             assertThat(app.lines()).noneSatisfy(line -> assertThat(line).contains(DEBUG_STARTUP_LINE));
             assertThat(JSON.readTree(app.get("/actuator/health")).has("components")).isFalse();
+            // The API documentation is a development tool here (ADR 0016): clients use docs/openapi.yaml.
+            assertThat(app.status("/v3/api-docs")).isEqualTo(404);
+            assertThat(app.status("/swagger-ui.html")).isEqualTo(404);
         }
     }
 
@@ -86,6 +89,8 @@ class ProfileConfigurationTests {
             assertThat(app.lines()).anySatisfy(line ->
                     assertThat(line).matches(compactLine).contains("DEBUG").contains(DEBUG_STARTUP_LINE));
             assertThat(JSON.readTree(app.get("/actuator/health")).has("components")).isTrue();
+            assertThat(JSON.readTree(app.get("/v3/api-docs")).path("info").path("title").asString()).isEqualTo("Job Finder API");
+            assertThat(app.get("/swagger-ui/index.html")).contains("Swagger UI");
         }
     }
 
@@ -169,6 +174,10 @@ class ProfileConfigurationTests {
             HttpResponse<String> response = send(path);
             assertThat(response.statusCode()).isEqualTo(200);
             return response.body();
+        }
+
+        int status(String path) throws IOException, InterruptedException {
+            return send(path).statusCode();
         }
 
         /**

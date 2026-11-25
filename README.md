@@ -13,7 +13,7 @@ documented and verified in the [`learning/`](learning/README.md) notes.
 | | Current | Planned |
 |-|---------|---------|
 | Language | Java 25 | |
-| Framework | Spring Boot 4.2 (Spring Framework 7.1), Spring MVC, Bean Validation, Spring Data Commons (paging types), Bucket4j (rate limiting), Micrometer Tracing + OpenTelemetry (trace IDs), Actuator | Spring Data JPA, Spring Security |
+| Framework | Spring Boot 4.2 (Spring Framework 7.1), Spring MVC, Bean Validation, Spring Data Commons (paging types), Bucket4j (rate limiting), Micrometer Tracing + OpenTelemetry (trace IDs), springdoc-openapi (OpenAPI 3.1, Swagger UI), Actuator | Spring Data JPA, Spring Security |
 | Build | Maven | |
 | Database | | PostgreSQL + Flyway |
 | Testing | JUnit 6, AssertJ, Mockito, `@WebMvcTest` + `MockMvcTester`, `@JsonTest`, `@SpringBootTest` + `RestTestClient`, ArchUnit, Spring Modulith, JaCoCo (coverage floor), PIT (mutation testing) | Testcontainers |
@@ -70,6 +70,10 @@ API conventions:
   response is replayed (`Idempotent-Replayed: true`) for 24 hours and the operation runs once, even for
   concurrent duplicates; the key with a different request is a `422`, during execution a `409`.
   `@Idempotent` endpoints require a key ([ADR 0014](docs/adr/0014-idempotency-keys.md)).
+- **API documentation:** OpenAPI 3.1, generated from the controllers by springdoc-openapi and corrected to
+  the real contract (versioned paths, paging, idempotency keys, every error as Problem Details). The
+  published contract is [`docs/openapi.yaml`](docs/openapi.yaml), checked against the code by a test; Swagger
+  UI at `http://localhost:8080/swagger-ui.html` in `dev` only ([ADR 0016](docs/adr/0016-openapi-documentation.md)).
 - **CORS:** browser origins are an explicit per-environment allowlist (`JOBFINDER_CORS_ALLOWEDORIGINS`),
   none by default, validated at startup ([ADR 0007](docs/adr/0007-cors-policy.md)).
 - **Logging:** SLF4J. Readable in `dev`, structured ECS JSON in `prod` ([ADR 0004](docs/adr/0004-logging-per-environment.md)).
@@ -173,9 +177,11 @@ src/test/java/com/shahabuddin/jobfinder/
 ├── shared/api/IdempotencyTests.java # replay, 422/409/400/413, 16 concurrent duplicates run once, errors free the key
 ├── shared/api/WebMvcSliceTests.java # controller slice template (MockMvcTester + @MockitoBean); slices get the API contract
 ├── shared/api/JsonSliceTests.java # wire format: ISO-8601 dates, nulls written, no coercion, unknown properties rejected
+├── shared/api/OpenApiTests.java   # the OpenAPI document matches the contract; OpenApiDocumentTests: docs/openapi.yaml is current
 └── architecture/                  # architecture rules (ArchUnit + Spring Modulith) and their tests
 docs/adr/                          # Architecture Decision Records
 docs/problems.md                   # catalogue of the API's Problem Details types
+docs/openapi.yaml                  # the OpenAPI contract, generated from the code (OpenApiDocumentTests)
 learning/                          # step-by-step notes (see below)
 AGENTS.md                          # instructions for AI coding agents (conventions, commands, definition of done)
 CLAUDE.md                          # Claude Code entry point: imports AGENTS.md
@@ -184,7 +190,7 @@ CLAUDE.md                          # Claude Code entry point: imports AGENTS.md
 
 ## Learning notes
 
-The [`learning/`](learning/README.md) folder is a step-by-step journal (41 notes so far). Each
+The [`learning/`](learning/README.md) folder is a step-by-step journal (42 notes so far). Each
 note explains a concept from scratch, shows the code, includes **real output from running
 experiments**, and ends with common mistakes and interview questions.
 
@@ -196,7 +202,7 @@ autowiring, circular dependencies, programmatic bean registration (Spring 7
 `@SpringBootApplication` with Actuator health checks, `@RestController` / REST API design, request mapping and binding, API versioning, clean architecture
 enforced with Spring Modulith and ArchUnit, per-environment logging with structured JSON, DevTools, JDBC fundamentals, Spring Data vs Spring Data JPA, how Spring Data JPA relates to Hibernate, and the
 important Spring Data JPA components (projections, N+1, Specifications, auditing, optimistic locking) and interfaces
-(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), the DTO pattern, global exception handling (and its production edge cases), CORS, request validation, pagination and sorting, filtering and search, rate limiting (every algorithm, measured), request correlation IDs (MDC, W3C trace context), idempotency keys (safe retries for `POST`), and testing a REST API (every kind of test, coverage and mutation testing).
+(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), the DTO pattern, global exception handling (and its production edge cases), CORS, request validation, pagination and sorting, filtering and search, rate limiting (every algorithm, measured), request correlation IDs (MDC, W3C trace context), idempotency keys (safe retries for `POST`), testing a REST API (every kind of test, coverage and mutation testing), and OpenAPI documentation with springdoc-openapi and Swagger UI.
 
 The original plain-Spring demo code from the early notes is preserved at the git tag
 [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).

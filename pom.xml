@@ -25,6 +25,13 @@
              gets a few weeks in the wild before it's adopted here. -->
         <bucket4j.version>8.22.0</bucket4j.version>
         <archunit.version>1.5.1</archunit.version>
+        <!-- springdoc-openapi (ADR 0016). Not the newest: 3.2.1, the first built on Spring Boot 4.2 (and on
+             Jackson 3), was 5 days old when evaluated. 3.2.0 (Boot 4.1 line) verified on Boot 4.2: starts,
+             full suite green. Known in 3.2.0, both accepted until 3.2.1 is a few weeks old: it adds
+             Jackson 2 (swagger-core 2.2.x, used only to write the document; the API still runs on
+             Jackson 3, verified by ValidationTests), and its Swagger UI bundles a DOMPurify with three
+             XSS advisories (mitigated: the UI is served in dev only, and can't load another document). -->
+        <springdoc.version>3.2.0</springdoc.version>
         <!-- Test tooling outside Spring Boot's BOM (ADR 0015). Not the newest releases (JaCoCo 0.8.16 and
              PIT 1.30.2 were 4 and 3 weeks old when evaluated): JaCoCo 0.8.15 is the first with official
              Java 25 support. -->
@@ -81,6 +88,15 @@
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <!-- API documentation (ADR 0016): generates the OpenAPI document of /api/** from the controllers
+             (served at /v3/api-docs) and serves Swagger UI (/swagger-ui.html). Both off outside the dev
+             profile; the published contract is the committed docs/openapi.yaml. -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
         </dependency>
 
         <!-- Production-ready endpoints: /actuator/health, metrics, info... -->

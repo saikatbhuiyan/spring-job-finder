@@ -1,6 +1,6 @@
 # ADR 0008: Exception handling hardening (5xx policy, one advice, fixed locale)
 
-- **Status:** Accepted; extended by [ADR 0009](0009-request-validation.md), [ADR 0013](0013-request-correlation.md) (filter exceptions logged inside the trace) and [ADR 0015](0015-testing-strategy.md) (unparseable query strings are a `400`, not a `500`)
+- **Status:** Accepted; extended by [ADR 0009](0009-request-validation.md), [ADR 0013](0013-request-correlation.md) (filter exceptions logged inside the trace) [ADR 0015](0015-testing-strategy.md) (unparseable query strings are a `400`, not a `500`) and [ADR 0016](0016-openapi-documentation.md) (the handler is ordered before any library advice)
 - **Date:** 2026-11-23
 - **Extends:** [ADR 0006](0006-global-exception-handling.md)
 
