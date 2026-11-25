@@ -38,6 +38,7 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | ✅ | CORS: per-environment origin allowlist, `CorsFilter`, startup validation ([note 32](32-cors.md), [ADR 0007](../docs/adr/0007-cors-policy.md)) |
 | ✅ | Rate limiting: Bucket4j token bucket per client, `429` + `Retry-After`, proxy-safe client identity ([note 37](37-rate-limiting.md), [ADR 0012](../docs/adr/0012-rate-limiting.md)); Redis-backed when there's more than one instance 🔜 |
 | ✅ | Request correlation: W3C trace ID (Micrometer Tracing + OpenTelemetry) in logs, `X-Trace-Id` and Problem Details ([note 38](38-request-correlation-id.md), [ADR 0013](../docs/adr/0013-request-correlation.md)); exporting traces to a collector 🔜 |
+| ✅ | Idempotency keys: `Idempotency-Key` on `POST`/`PATCH`, `@Idempotent`, fingerprint, atomic claim, replay ([note 39](39-idempotency-keys.md), [ADR 0014](../docs/adr/0014-idempotency-keys.md)); database-backed store in the business transaction 🔜 |
 
 ## Phase 3: Building Job Finder
 
