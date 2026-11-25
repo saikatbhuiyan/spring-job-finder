@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.filter.OncePerRequestFilter;
 import tools.jackson.databind.json.JsonMapper;
@@ -72,12 +71,8 @@ final class RateLimitFilter extends OncePerRequestFilter {
     private void reject(HttpServletRequest request, HttpServletResponse response, long retryAfterSeconds) throws IOException {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS,
                 "Too many requests. Retry after " + retryAfterSeconds + (retryAfterSeconds == 1 ? " second." : " seconds."));
-        problem.setInstance(GlobalExceptionHandler.toInstance(request.getRequestURI()));
-        TraceIdFilter.addTraceId(problem, request);
-        response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(retryAfterSeconds));
-        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-        json.writeValue(response.getOutputStream(), problem);
+        ProblemResponses.write(request, response, problem, json);
     }
 
     /** Number of clients currently tracked (for tests: the cache must stay bounded). */

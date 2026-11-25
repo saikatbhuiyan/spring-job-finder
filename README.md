@@ -66,6 +66,10 @@ API conventions:
 - **Request correlation:** every request has a W3C trace ID (a caller's valid `traceparent` is continued),
   printed in every log line (`trace.id` in prod JSON) and returned in the `X-Trace-Id` header and as `traceId`
   in every error, so a reported error leads straight to its log lines ([ADR 0013](docs/adr/0013-request-correlation.md)).
+- **Idempotency keys:** `POST`/`PATCH` with an `Idempotency-Key` are safe to retry: the first successful
+  response is replayed (`Idempotent-Replayed: true`) for 24 hours and the operation runs once, even for
+  concurrent duplicates; the key with a different request is a `422`, during execution a `409`.
+  `@Idempotent` endpoints require a key ([ADR 0014](docs/adr/0014-idempotency-keys.md)).
 - **CORS:** browser origins are an explicit per-environment allowlist (`JOBFINDER_CORS_ALLOWEDORIGINS`),
   none by default, validated at startup ([ADR 0007](docs/adr/0007-cors-policy.md)).
 - **Logging:** SLF4J. Readable in `dev`, structured ECS JSON in `prod` ([ADR 0004](docs/adr/0004-logging-per-environment.md)).
@@ -133,9 +137,10 @@ src/main/java/com/shahabuddin/jobfinder/
     ├── DomainException.java       # sealed: ResourceNotFoundException (404), ConflictException (409)
     ├── PageQuery.java             # the API's paging contract (+ @SortableBy allowlist)
     ├── SearchText.java            # normalizes free-text search input
-    └── api/                       # GlobalExceptionHandler, ProblemDetailsErrorController (/error), CorsConfig, JsonBindingConfig, PageQuery binding, unknown-parameter check, RateLimitFilter, TraceIdFilter
+    ├── Idempotent.java            # marks POST/PATCH endpoints that require an Idempotency-Key
+    └── api/                       # GlobalExceptionHandler, ProblemDetailsErrorController (/error), CorsConfig, JsonBindingConfig, PageQuery binding, unknown-parameter check, RateLimitFilter, TraceIdFilter, IdempotencyFilter
 src/main/resources/
-├── application.properties         # shared: Actuator, API versioning, strict JSON, ISO dates, CORS (none), rate limit, tracing (W3C only)
+├── application.properties         # shared: Actuator, API versioning, strict JSON, ISO dates, CORS (none), rate limit, idempotency keys, tracing (W3C only)
 ├── application-dev.properties     # dev: readable logs with trace ID, DEBUG, health details, CORS for localhost frontends
 └── application-prod.properties    # prod: ECS JSON logs (trace.id / span.id)
 src/test/java/com/shahabuddin/jobfinder/
@@ -151,6 +156,7 @@ src/test/java/com/shahabuddin/jobfinder/
 ├── shared/api/FilteringTests.java # filters: unknown parameters, ISO dates, search text, list values
 ├── shared/api/RateLimitTests.java # 429 + Retry-After, health not limited, forged X-Forwarded-For, CORS, metrics
 ├── shared/api/TracingTests.java  # trace ID in header, log lines, errors; traceparent in, only traceparent out; async
+├── shared/api/IdempotencyTests.java # replay, 422/409/400/413, 16 concurrent duplicates run once, errors free the key
 └── architecture/                  # architecture rules (ArchUnit + Spring Modulith) and their tests
 docs/adr/                          # Architecture Decision Records
 docs/problems.md                   # catalogue of the API's Problem Details types
@@ -162,7 +168,7 @@ CLAUDE.md                          # Claude Code entry point: imports AGENTS.md
 
 ## Learning notes
 
-The [`learning/`](learning/README.md) folder is a step-by-step journal (39 notes so far). Each
+The [`learning/`](learning/README.md) folder is a step-by-step journal (40 notes so far). Each
 note explains a concept from scratch, shows the code, includes **real output from running
 experiments**, and ends with common mistakes and interview questions.
 
@@ -174,7 +180,7 @@ autowiring, circular dependencies, programmatic bean registration (Spring 7
 `@SpringBootApplication` with Actuator health checks, `@RestController` / REST API design, request mapping and binding, API versioning, clean architecture
 enforced with Spring Modulith and ArchUnit, per-environment logging with structured JSON, DevTools, JDBC fundamentals, Spring Data vs Spring Data JPA, how Spring Data JPA relates to Hibernate, and the
 important Spring Data JPA components (projections, N+1, Specifications, auditing, optimistic locking) and interfaces
-(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), the DTO pattern, global exception handling (and its production edge cases), CORS, request validation, pagination and sorting, filtering and search, rate limiting (every algorithm, measured), and request correlation IDs (MDC, W3C trace context).
+(repository hierarchy, keyset scrolling), derived query methods, `@Query` (JPQL, native, bulk updates), Lombok (with its JPA traps), the DTO pattern, global exception handling (and its production edge cases), CORS, request validation, pagination and sorting, filtering and search, rate limiting (every algorithm, measured), request correlation IDs (MDC, W3C trace context), and idempotency keys (safe retries for `POST`).
 
 The original plain-Spring demo code from the early notes is preserved at the git tag
 [`spring-core-basics`](https://github.com/saikatbhuiyan/spring-job-finder/tree/spring-core-basics).

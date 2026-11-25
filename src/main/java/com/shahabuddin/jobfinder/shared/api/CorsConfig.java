@@ -36,16 +36,16 @@ class CorsConfig {
      * Request headers a browser may send. {@code new CorsConfiguration()} allows <b>none</b> by
      * default, so even {@code Content-Type: application/json} would fail its preflight.
      */
-    static final List<String> ALLOWED_HEADERS = List.of("Content-Type", "Authorization");
+    static final List<String> ALLOWED_HEADERS = List.of("Content-Type", "Authorization", IdempotencyKey.HEADER);
 
     /**
      * Response headers the frontend may read. Browsers hide everything else: {@code Location} of a
      * {@code 201}, the API version retirement headers {@code Deprecation}, {@code Sunset} and
-     * {@code Link} (ADR 0002), {@code Retry-After} of a {@code 429} (ADR 0012), and the request's
-     * {@code X-Trace-Id} (ADR 0013).
+     * {@code Link} (ADR 0002), {@code Retry-After} of a {@code 429} (ADR 0012), the request's
+     * {@code X-Trace-Id} (ADR 0013), and {@code Idempotent-Replayed} (ADR 0014).
      */
-    static final List<String> EXPOSED_HEADERS =
-            List.of("Location", "Deprecation", "Sunset", "Link", "Retry-After", TraceIdFilter.HEADER);
+    static final List<String> EXPOSED_HEADERS = List.of("Location", "Deprecation", "Sunset", "Link", "Retry-After",
+            TraceIdFilter.HEADER, IdempotencyFilter.REPLAYED_HEADER);
 
     private static final Logger log = LoggerFactory.getLogger(CorsConfig.class);
 

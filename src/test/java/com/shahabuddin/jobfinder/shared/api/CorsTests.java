@@ -59,12 +59,13 @@ class CorsTests {
         client.options().uri("/api/v1/cors-probe")
                 .header("Origin", FRONTEND)
                 .header("Access-Control-Request-Method", "POST")
-                .header("Access-Control-Request-Headers", "content-type, authorization")
+                // Idempotency-Key: a browser couldn't make a retry-safe POST otherwise (ADR 0014).
+                .header("Access-Control-Request-Headers", "content-type, authorization, idempotency-key")
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().valueEquals("Access-Control-Allow-Origin", FRONTEND)
                 .expectHeader().valueEquals("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE")
-                .expectHeader().valueEquals("Access-Control-Allow-Headers", "content-type, authorization")
+                .expectHeader().valueEquals("Access-Control-Allow-Headers", "content-type, authorization, idempotency-key")
                 .expectHeader().valueEquals("Access-Control-Max-Age", "3600")
                 .expectHeader().doesNotExist("Access-Control-Allow-Credentials");
     }
@@ -96,7 +97,7 @@ class CorsTests {
                 .exchange()
                 .expectStatus().isCreated()
                 .expectHeader().valueEquals("Access-Control-Allow-Origin", FRONTEND)
-                .expectHeader().valueEquals("Access-Control-Expose-Headers", "Location, Deprecation, Sunset, Link, Retry-After, X-Trace-Id")
+                .expectHeader().valueEquals("Access-Control-Expose-Headers", "Location, Deprecation, Sunset, Link, Retry-After, X-Trace-Id, Idempotent-Replayed")
                 .expectHeader().exists("Location")
                 .expectHeader().values("Vary", vary -> assertThat(vary).contains("Origin"));
         assertThat(probe.posts).hasValue(1);

@@ -21,7 +21,7 @@ Base package: `com.shahabuddin.jobfinder`. Remote: `github.com/saikatbhuiyan/spr
 ## Commands
 
 ```bash
-mvn -q test                                   # full suite: ~165 tests, ~20 s. Must pass before any change is done
+mvn -q test                                   # full suite: ~220 tests, ~20 s. Must pass before any change is done
 mvn -q test -Dtest=RateLimitTests             # one test class
 mvn -q test -Dtest='ArchitectureTests,ModularityTests'   # architecture rules only
 mvn spring-boot:run                           # dev profile, http://localhost:8080
@@ -81,6 +81,7 @@ on bad code (`ArchitectureRulesTests`, `ModularityRulesTests`).
 | Filtering | Filter records, ISO-8601 dates, normalized `q` (`SearchText`); unknown query parameter = 400 | [0011](docs/adr/0011-filtering-and-search.md) |
 | Rate limiting | Token bucket per `getRemoteAddr()` on `/api/**`; 429 + `Retry-After`; never read `X-Forwarded-For` in code | [0012](docs/adr/0012-rate-limiting.md) |
 | Correlation | The W3C trace ID is the correlation ID: `X-Trace-Id` header + `traceId` in every problem; never a hand-rolled request ID or MDC key; W3C propagation only, no baggage; use Boot's executors and `RestClient.Builder` so the trace propagates | [0013](docs/adr/0013-request-correlation.md) |
+| Idempotency | Create-like `POST`/`PATCH` endpoints get `@Idempotent` (key required); any keyed `POST`/`PATCH` is replayed, never re-executed; only 2xx stored; new error types documented in docs/problems.md | [0014](docs/adr/0014-idempotency-keys.md) |
 | CORS | Per-environment allowlist (`jobfinder.cors.allowed-origins`), none by default | [0007](docs/adr/0007-cors-policy.md) |
 | Logging | Readable in `dev`, ECS JSON in `prod` | [0004](docs/adr/0004-logging-per-environment.md) |
 

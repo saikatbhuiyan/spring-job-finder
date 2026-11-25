@@ -26,6 +26,12 @@ final class ProblemTypes {
     /** The request conflicts with the current state of a resource. */
     static final URI CONFLICT = URI.create(BASE + "conflict");
 
+    /** An {@code Idempotency-Key} was sent again with a different request (ADR 0014). */
+    static final URI IDEMPOTENCY_KEY_REUSED = URI.create(BASE + "idempotency-key-reused");
+
+    /** The request with this {@code Idempotency-Key} is still being processed (ADR 0014). */
+    static final URI REQUEST_IN_PROGRESS = URI.create(BASE + "request-in-progress");
+
     private ProblemTypes() {
     }
 }

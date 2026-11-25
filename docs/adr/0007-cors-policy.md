@@ -1,6 +1,6 @@
 # ADR 0007: CORS policy for the REST API
 
-- **Status:** Accepted; extended by [ADR 0012](0012-rate-limiting.md) (`Retry-After` exposed) and [ADR 0013](0013-request-correlation.md) (`X-Trace-Id` exposed)
+- **Status:** Accepted; extended by [ADR 0012](0012-rate-limiting.md) (`Retry-After` exposed), [ADR 0013](0013-request-correlation.md) (`X-Trace-Id` exposed) and [ADR 0014](0014-idempotency-keys.md) (`Idempotency-Key` allowed, `Idempotent-Replayed` exposed)
 - **Date:** 2026-11-22
 
 ## Context

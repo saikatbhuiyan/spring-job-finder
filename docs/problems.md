@@ -83,3 +83,37 @@ Rejected values are never echoed back.
 
 `409 Conflict`. The request conflicts with the current state of a resource, e.g. closing a job that is
 already closed. Reload the resource and decide again; retrying the same request won't help.
+
+## idempotency-key-reused
+
+`422 Unprocessable Content`. The `Idempotency-Key` was already used for a **different** request (another
+method, path, query string or body). A key identifies one operation: use a new key for a new request.
+
+## request-in-progress
+
+`409 Conflict`, with `Retry-After: 1`. The first request with this `Idempotency-Key` is still being
+processed. Retry the same request after the indicated seconds to get its result. Nothing needs to change
+in the request.
+
+## Idempotency keys
+
+`POST` and `PATCH` requests can be made safe to retry with an `Idempotency-Key` header
+([ADR 0014](adr/0014-idempotency-keys.md), following the IETF draft
+`draft-ietf-httpapi-idempotency-key-header`):
+
+```http
+POST /api/v1/jobs HTTP/1.1
+Idempotency-Key: "8e03978e-40d5-43e8-bc93-6894a57f9324"
+```
+
+- **Format**: a quoted string (or the same characters unquoted) of **16 to 255** printable ASCII
+  characters. Use a random UUID, a new one per operation. Anything else is a `validation-error` (code
+  `InvalidValue`), never silently ignored. Endpoints documented as idempotent **require** a key (code
+  `Required` without one).
+- **Retry** with the same key and the **byte-identical** request: you get the first **successful (2xx)**
+  response again (status, `Location`, body), with `Idempotent-Replayed: true`. The operation is not
+  executed again.
+- **Errors aren't kept**: after a `4xx` or `5xx` the key is free, so the same key can be used for the
+  retry or the corrected request.
+- **Lifetime**: a key is kept for **24 hours** after its response. A retry after that executes again.
+- **Size**: a request with a key may have a body of at most 1 MB (`413` beyond it).
