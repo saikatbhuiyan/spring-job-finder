@@ -35,11 +35,12 @@ Classes in `java.lang` (`String`, `Integer`, `IO`) are imported automatically.
 
 How this project uses packages:
 
-| Package | Purpose |
-|---------|---------|
-| `com.shahabuddin` | Entry point (`Main`) |
-| `com.shahabuddin.beans` | Plain data classes that Spring will manage |
-| `com.shahabuddin.config` | Spring configuration classes |
+
+| Package                  | Purpose                                    |
+| -------------------------- | -------------------------------------------- |
+| `com.shahabuddin`        | Entry point (`Main`)                       |
+| `com.shahabuddin.beans`  | Plain data classes that Spring will manage |
+| `com.shahabuddin.config` | Spring configuration classes               |
 
 ---
 
@@ -69,12 +70,13 @@ Vehicle vehicle = new Vehicle();   // create an object with `new`
 
 ## 3. Access modifiers and encapsulation
 
-| Modifier | Visible from |
-|----------|--------------|
-| `public` | Everywhere |
-| `protected` | Same package + subclasses |
-| *(none)*: "package-private" | Same package only |
-| `private` | Only inside the same class |
+
+| Modifier                    | Visible from               |
+| ----------------------------- | ---------------------------- |
+| `public`                    | Everywhere                 |
+| `protected`                 | Same package + subclasses  |
+| *(none)*: "package-private" | Same package only          |
+| `private`                   | Only inside the same class |
 
 `name` is `private`, so no other class can touch it directly. They must go through methods.
 This is **encapsulation**: the class controls how its data is read and changed.
@@ -142,10 +144,11 @@ public class Main {
 Both work in Java 25. The shorter form comes from **JEP 512 (Compact Source Files and
 Instance Main Methods)**, which became final in Java 25:
 
-| Old style | Java 25 style | Notes |
-|-----------|---------------|-------|
-| `public static void main(String[] args)` | `static void main()` or even `void main()` | `public` and `args` are optional now |
-| `System.out.println(...)` | `IO.println(...)` | `java.lang.IO` is a new helper class for console I/O |
+
+| Old style                                | Java 25 style                              | Notes                                                |
+| ------------------------------------------ | -------------------------------------------- | ------------------------------------------------------ |
+| `public static void main(String[] args)` | `static void main()` or even `void main()` | `public` and `args` are optional now                 |
+| `System.out.println(...)`                | `IO.println(...)`                          | `java.lang.IO` is a new helper class for console I/O |
 
 **Recommendation:** know both. Most existing code, books and interviews use the classic
 form, and Spring Boot's generated apps use `public static void main(String[] args)`.
@@ -164,6 +167,7 @@ var veh = context.getBean(Vehicle.class);
 later.
 
 Rules:
+
 - Works only for **local variables** (inside methods), not for fields or parameters.
 - Must be initialized on the same line.
 - Use it when the type is obvious from the right side; spell out the type when it isn't.
@@ -263,12 +267,13 @@ Note 02 covers them.
 
 Java naming rules are conventions, not compiler rules, but everyone follows them:
 
-| Thing | Convention | Example |
-|-------|------------|---------|
-| Class | `PascalCase` | `ProjectConfig` |
-| Method, variable | `camelCase` | `getName`, `luckyNumber` |
-| Constant | `UPPER_SNAKE_CASE` | `MAX_RESULTS` |
-| Package | all lowercase | `com.shahabuddin.beans` |
+
+| Thing            | Convention         | Example                  |
+| ------------------ | -------------------- | -------------------------- |
+| Class            | `PascalCase`       | `ProjectConfig`          |
+| Method, variable | `camelCase`        | `getName`, `luckyNumber` |
+| Constant         | `UPPER_SNAKE_CASE` | `MAX_RESULTS`            |
+| Package          | all lowercase      | `com.shahabuddin.beans`  |
 
 ✅ **Fixed (2026-11-19).** In [ProjectConfig.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/config/ProjectConfig.java)
 the method was first named `LuckyNumber()`, which broke this rule. It's now `luckyNumber()`.

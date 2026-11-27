@@ -44,12 +44,13 @@ before it), so it's a good choice for a project you want to keep.
 Writing `javac` commands by hand gets painful once you have many files and external
 libraries. **Maven** does this for you:
 
-| Job | What Maven does |
-|-----|-----------------|
+
+| Job                   | What Maven does                                            |
+| ----------------------- | ------------------------------------------------------------ |
 | Dependency management | Downloads libraries (like Spring) and *their* dependencies |
-| Build | Compiles `src/main/java` into `target/classes` |
-| Standard layout | Every Maven project has the same folder structure |
-| Lifecycle | Standard commands: `compile`, `test`, `package`, `install` |
+| Build                 | Compiles `src/main/java` into `target/classes`             |
+| Standard layout       | Every Maven project has the same folder structure          |
+| Lifecycle             | Standard commands: `compile`, `test`, `package`, `install` |
 
 Check your version:
 
@@ -79,6 +80,7 @@ project to Maven. See [pom.xml](../pom.xml).
 ```xml
 <modelVersion>4.0.0</modelVersion>
 ```
+
 The POM format version. It's always `4.0.0`; you never change it.
 
 ```xml
@@ -86,6 +88,7 @@ The POM format version. It's always `4.0.0`; you never change it.
 <artifactId>job-finder</artifactId>
 <version>1.0-SNAPSHOT</version>
 ```
+
 These are the project's **coordinates**, its unique ID in the Maven world (often called "GAV"):
 
 - **groupId**: who owns it, usually a reversed domain name (`com.shahabuddin`).
@@ -101,6 +104,7 @@ Every dependency you add is identified by the same three coordinates.
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 </properties>
 ```
+
 - `source` / `target`: compile the code as Java 25 and produce Java 25 bytecode.
   (A modern alternative is a single `<maven.compiler.release>25</maven.compiler.release>`.)
 - `sourceEncoding`: read source files as UTF-8, so characters like `’` in comments work
@@ -121,9 +125,10 @@ Every dependency you add is identified by the same three coordinates.
 </dependencies>
 ```
 
-| Dependency | Why |
-|------------|-----|
-| `spring-context` | **Spring Framework 7**: the IoC container (notes 02–04) |
+
+| Dependency               | Why                                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `spring-context`         | **Spring Framework 7**: the IoC container (notes 02–04)                                                        |
 | `jakarta.annotation-api` | `@PostConstruct` / `@PreDestroy` (added 2026-11-20, see [note 04 §8](04-component-scan-and-bean-lifecycle.md)) |
 
 ### ✅ Mistake fixed (2026-11-20): `<dependency>` outside `<dependencies>`
@@ -159,16 +164,17 @@ mvn dependency:tree
 
 The jars in this project:
 
-| Jar | Why it's here |
-|-----|---------------|
-| `spring-context` | `ApplicationContext`, `@Configuration`, `@Bean` (what we use) |
-| `spring-beans` | Bean definitions and the `BeanFactory`, the core of the container |
-| `spring-core` | Low-level utilities used by all of Spring |
-| `spring-aop` | Aspect-Oriented Programming (proxies); used internally |
-| `spring-expression` | SpEL, the Spring Expression Language (`#{...}`) |
-| `commons-logging` | Logging bridge |
-| `jspecify` | Null-safety annotations (`@Nullable`) that Spring 7 uses |
-| `micrometer-observation`, `micrometer-commons` | Metrics/observability hooks |
+
+| Jar                                            | Why it's here                                                     |
+| ------------------------------------------------ | ------------------------------------------------------------------- |
+| `spring-context`                               | `ApplicationContext`, `@Configuration`, `@Bean` (what we use)     |
+| `spring-beans`                                 | Bean definitions and the `BeanFactory`, the core of the container |
+| `spring-core`                                  | Low-level utilities used by all of Spring                         |
+| `spring-aop`                                   | Aspect-Oriented Programming (proxies); used internally            |
+| `spring-expression`                            | SpEL, the Spring Expression Language (`#{...}`)                   |
+| `commons-logging`                              | Logging bridge                                                    |
+| `jspecify`                                     | Null-safety annotations (`@Nullable`) that Spring 7 uses          |
+| `micrometer-observation`, `micrometer-commons` | Metrics/observability hooks                                       |
 
 ---
 
@@ -199,13 +205,14 @@ job-finder/
 
 [.gitignore](../.gitignore) tells Git which files **not** to track:
 
-| Entry | Why ignored |
-|-------|-------------|
-| `target/` | Build output; anyone can regenerate it with `mvn compile` |
-| `.idea/…`, `*.iml` | IntelliJ's personal settings |
-| `.vscode/` | VS Code's personal settings |
-| `.DS_Store` | macOS folder metadata |
-| ~~`learning/`~~ | Was ignored at first; removed on 2026-11-19 so these notes are committed as part of the portfolio. |
+
+| Entry               | Why ignored                                                                                        |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| `target/`           | Build output; anyone can regenerate it with `mvn compile`                                          |
+| `.idea/…`, `*.iml` | IntelliJ's personal settings                                                                       |
+| `.vscode/`          | VS Code's personal settings                                                                        |
+| `.DS_Store`         | macOS folder metadata                                                                              |
+| ~~`learning/`~~     | Was ignored at first; removed on 2026-11-19 so these notes are committed as part of the portfolio. |
 
 ---
 
@@ -216,6 +223,7 @@ job-finder/
 > original plain-Spring version.
 
 ### From the IDE
+
 Open [Main.java](https://github.com/saikatbhuiyan/spring-job-finder/blob/spring-core-basics/src/main/java/com/shahabuddin/Main.java) and click the green ▶ next to
 `main`.
 
@@ -243,23 +251,25 @@ String value  from Spring Context is: Hello World
 
 ### Useful Maven commands
 
-| Command | What it does |
-|---------|--------------|
-| `mvn compile` | Compile main code |
-| `mvn test` | Compile and run tests |
-| `mvn package` | Build a `.jar` in `target/` |
-| `mvn clean` | Delete `target/` |
+
+| Command               | What it does                                     |
+| ----------------------- | -------------------------------------------------- |
+| `mvn compile`         | Compile main code                                |
+| `mvn test`            | Compile and run tests                            |
+| `mvn package`         | Build a `.jar` in `target/`                      |
+| `mvn clean`           | Delete `target/`                                 |
 | `mvn dependency:tree` | Show all dependencies, including transitive ones |
 
 ---
 
 ## Common mistakes
 
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| `release version 25 not supported` | Maven is running on an older JDK | `mvn -v` must show Java 25; set `JAVA_HOME` |
+
+| Symptom                                        | Cause                                | Fix                                           |
+| ------------------------------------------------ | -------------------------------------- | ----------------------------------------------- |
+| `release version 25 not supported`             | Maven is running on an older JDK     | `mvn -v` must show Java 25; set `JAVA_HOME`   |
 | `package org.springframework… does not exist` | Dependency missing or not downloaded | Check `pom.xml`, then reload Maven in the IDE |
-| Class not found when running | Wrong package or folder | Folder path must match the `package` line |
+| Class not found when running                   | Wrong package or folder              | Folder path must match the `package` line     |
 
 ## Interview questions
 
