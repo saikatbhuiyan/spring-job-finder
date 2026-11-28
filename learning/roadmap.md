@@ -55,7 +55,7 @@ Legend: ✅ applied · 🧪 learned, not applied · 🔜 planned
 | 🔜 | Database with Spring Data JPA + PostgreSQL | `Job`, `Company`, `Application` entities |
 | 🔜 | Schema migrations with Flyway | Versioned database changes |
 | 🧪 | Search, filtering, pagination: pagination and sorting contract ✅ ([note 35](35-pagination-and-sorting.md), [ADR 0010](../docs/adr/0010-pagination-and-sorting.md)); filtering and search API contract ✅, database side decided ([note 36](36-filtering-and-search.md), [ADR 0011](../docs/adr/0011-filtering-and-search.md)); queries come with the Job module 🔜 | Search jobs by title, location, salary |
-| 🔜 | Spring Security + JWT | Job seekers and employers log in |
+| 🧪 | Spring Security + JWT: authN vs authZ, JWT validation (issuer, audience, clock skew), OAuth2 resource server, scopes vs roles vs ownership, deny by default, password hashing ([note 42](42-spring-security-and-jwt.md)); applied after the `job` module 🔜 | Job seekers and employers log in |
 | ✅ | Testing a REST API: every kind of test, `@WebMvcTest`/`@JsonTest` slices, `@SpringBootTest` over real HTTP, JaCoCo coverage floor, PIT mutation testing ([note 40](40-testing-rest-apis.md), [ADR 0015](../docs/adr/0015-testing-strategy.md)) | Every layer tested at the right level |
 | 🔜 | Integration testing against PostgreSQL: `@DataJpaTest` + Testcontainers, Failsafe for `*IT` | Tests against a real DB |
 | ✅ | API docs with OpenAPI / Swagger UI: springdoc-openapi, corrected to the real contract, dev only, `docs/openapi.yaml` as the published contract ([note 41](41-openapi-documentation.md), [ADR 0016](../docs/adr/0016-openapi-documentation.md)) | Portfolio-friendly API explorer |
